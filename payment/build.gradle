@@ -1,0 +1,29 @@
+apply {
+    plugin("java")
+    plugin("base")
+    plugin("idea")
+}
+
+repositories {
+    mavenCentral()
+}
+
+group = "wdm.group6"
+version = "1.0-SNAPSHOT"
+sourceCompatibility = JavaVersion.VERSION_17
+
+dependencies {
+    implementation("io.javalin:javalin:5.5.0")
+    implementation("org.slf4j:slf4j-simple:2.0.7")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.0")
+}
+
+jar {
+    duplicatesStrategy 'exclude'
+    manifest {
+        attributes 'Main-Class': 'PaymentApp'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
