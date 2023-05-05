@@ -2,7 +2,8 @@ import controller.StockApiController;
 import io.javalin.Javalin;
 import services.StockService;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class StockApp {
     public static void main(String[] args) {

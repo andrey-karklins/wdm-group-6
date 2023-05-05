@@ -2,7 +2,8 @@ import controllers.PaymentApiController;
 import io.javalin.Javalin;
 import services.PaymentService;
 
-import static io.javalin.apibuilder.ApiBuilder.*;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class PaymentApp {
     public static void main(String[] args) {

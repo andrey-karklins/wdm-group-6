@@ -1,12 +1,8 @@
 import controllers.OrderApiController;
 import io.javalin.Javalin;
-import models.Order;
 import services.OrderService;
 
-import java.util.UUID;
-
 import static io.javalin.apibuilder.ApiBuilder.*;
-import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class OrderApp {
     public static void main(String[] args) {

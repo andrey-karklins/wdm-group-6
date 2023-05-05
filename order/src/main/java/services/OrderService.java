@@ -3,7 +3,6 @@ package services;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.MappingManager;
-import models.Order;
 
 public class OrderService {
     static Cluster cluster = null;
