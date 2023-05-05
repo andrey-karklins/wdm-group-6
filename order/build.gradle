@@ -16,6 +16,9 @@ dependencies {
     implementation("io.javalin:javalin:5.5.0")
     implementation("org.slf4j:slf4j-simple:2.0.7")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.0")
+    implementation("com.datastax.oss:java-driver-core:4.15.0")
+    implementation("com.datastax.cassandra:cassandra-driver-mapping:3.11.3")
+    implementation("com.codahale.metrics:metrics-core:3.0.2")
 }
 
 jar {
