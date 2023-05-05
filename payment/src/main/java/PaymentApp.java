@@ -1,5 +1,6 @@
 import controllers.PaymentApiController;
 import io.javalin.Javalin;
+import services.PaymentService;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
@@ -14,6 +15,15 @@ public class PaymentApp {
             post("add_funds/{user_id}/{amount}", ctx -> ctx.json(api.addFunds(ctx.pathParam("user_id"), Integer.parseInt(ctx.pathParam("amount")))));
             post("create_user", ctx -> ctx.json(api.createUser()));
             get("find_user/{user_id}", ctx -> ctx.json(api.findUser(ctx.pathParam("user_id"))));
+        });
+        app.events(event -> {
+            event.serverStarted(() -> {
+                try {
+                    PaymentService.init();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
         });
         app.start(5000);
     }

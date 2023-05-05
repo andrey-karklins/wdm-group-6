@@ -13,23 +13,23 @@ services:
 
   order-db:
     image: cassandra:latest
+    environment:
+      - CASSANDRA_CLUSTER_NAME=order-cluster
 
-#  stock-service:
-#    build: ./stock
-#    image: stock:latest
-#    env_file:
-#      - env/stock_redis.env
+  stock-service:
+    build: ./stock
+    image: stock:latest
 
-#  stock-db:
-#    image: redis:latest
-#    command: redis-server --requirepass redis --maxmemory 512mb
+  stock-db:
+    image: cassandra:latest
+    environment:
+      - CASSANDRA_CLUSTER_NAME=stock-cluster
 
-#  payment-service:
-#    build: ./payment
-#    image: user:latest
-#    env_file:
-#      - env/payment_redis.env
+  payment-service:
+    build: ./payment
+    image: user:latest
 
-#  payment-db:
-#    image: redis:latest
-#    command: redis-server --requirepass redis --maxmemory 512mb
+  payment-db:
+    image: cassandra:latest
+    environment:
+      - CASSANDRA_CLUSTER_NAME=payment-cluster
