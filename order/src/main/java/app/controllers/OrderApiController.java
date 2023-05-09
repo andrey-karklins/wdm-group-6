@@ -16,7 +16,6 @@ public class OrderApiController {
     }
 
     public Map<String, Object> findOrder(String orderId) {
-        OrderService.sendEvent("order-created", "test");
         Map<String, Object> res = Map.of("order_id", orderId,
                 "paid", true,
                 "items", List.of("123", "456"),
