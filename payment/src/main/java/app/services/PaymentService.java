@@ -1,5 +1,7 @@
-package services;
+package app.services;
 
+import app.PaymentApp;
+import app.models.User;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
@@ -7,7 +9,6 @@ import com.datastax.driver.mapping.MappingManager;
 import com.datastax.driver.mapping.annotations.Accessor;
 import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
-import models.User;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -19,11 +20,16 @@ public class PaymentService {
     static boolean initialized = false;
     static String keyspace = "payment_keyspace";
 
+    public static void sendEvent(String event, String data) {
+        PaymentApp.clients.forEach(client -> client.sendEvent(event, data));
+    }
+
     public static void createKeyspace(String keyspace) {
         String query = "CREATE KEYSPACE IF NOT EXISTS " + keyspace
                 + " WITH replication = {'class':'SimpleStrategy', 'replication_factor':1};";
         session.execute(query);
     }
+
     public static void useKeyspace(String keyspace) {
         session.execute("USE " + keyspace);
     }

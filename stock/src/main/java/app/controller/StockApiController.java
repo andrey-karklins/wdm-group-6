@@ -1,12 +1,10 @@
-package controller;
+package app.controller;
 
-import com.datastax.driver.core.DataType;
+import app.services.StockService;
 import com.datastax.driver.core.Row;
 
 import java.util.Map;
 import java.util.UUID;
-
-import services.StockService;
 public class StockApiController {
     private static final StockService stock_service=new StockService();
     public Map<String, Object> find(String itemId) {

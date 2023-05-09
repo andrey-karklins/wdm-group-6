@@ -11,25 +11,25 @@ services:
     build: ./order
     image: order:latest
 
-  order-db:
-    image: cassandra:latest
-    environment:
-      - CASSANDRA_CLUSTER_NAME=order-cluster
+#  order-db:
+#    image: cassandra:latest
+#    environment:
+#      - CASSANDRA_CLUSTER_NAME=order-cluster
 
   stock-service:
     build: ./stock
     image: stock:latest
 
-  stock-db:
-    image: cassandra:latest
-    environment:
-      - CASSANDRA_CLUSTER_NAME=stock-cluster
+#  stock-db:
+#    image: cassandra:latest
+#    environment:
+#      - CASSANDRA_CLUSTER_NAME=stock-cluster
 
   payment-service:
     build: ./payment
     image: user:latest
 
-  payment-db:
-    image: cassandra:latest
-    environment:
-      - CASSANDRA_CLUSTER_NAME=payment-cluster
+#  payment-db:
+#    image: cassandra:latest
+#    environment:
+#      - CASSANDRA_CLUSTER_NAME=payment-cluster

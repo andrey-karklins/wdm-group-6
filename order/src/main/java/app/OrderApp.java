@@ -1,10 +1,18 @@
-import controllers.OrderApiController;
+package app;
+
+import app.controllers.OrderApiController;
+import app.services.PaymentEventsService;
+import app.services.StockEventsService;
 import io.javalin.Javalin;
-import services.OrderService;
+import io.javalin.http.sse.SseClient;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static io.javalin.apibuilder.ApiBuilder.*;
 
 public class OrderApp {
+    public static ConcurrentLinkedQueue<SseClient> clients = new ConcurrentLinkedQueue<>();
+
     public static void main(String[] args) {
         var app = Javalin.create(/*config*/);
         var api = new OrderApiController();
@@ -16,10 +24,18 @@ public class OrderApp {
             delete("removeItem/{order_id}/{item_id}", ctx -> ctx.json(api.removeItem(ctx.pathParam("order_id"), ctx.pathParam("item_id"))));
             post("checkout/{order_id}", ctx -> ctx.json(api.checkout(ctx.pathParam("order_id"))));
         });
+        app.sse("/sse", (client) -> {
+            client.sendEvent("connected", "order-service");
+            client.keepAlive();
+            client.onClose(() -> clients.remove(client));
+            clients.add(client);
+        });
         app.events(event -> {
             event.serverStarted(() -> {
                 try {
-                    OrderService.init();
+//                    OrderService.init();
+                    PaymentEventsService.listen();
+                    StockEventsService.listen();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
