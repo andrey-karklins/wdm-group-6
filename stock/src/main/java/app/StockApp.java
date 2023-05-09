@@ -1,11 +1,18 @@
-import controller.StockApiController;
+package app;
+
+import app.controller.StockApiController;
+import app.services.OrderEventsService;
+import app.services.PaymentEventsService;
 import io.javalin.Javalin;
-import services.StockService;
+import io.javalin.http.sse.SseClient;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class StockApp {
+    public static ConcurrentLinkedQueue<SseClient> clients = new ConcurrentLinkedQueue<>();
     public static void main(String[] args) {
         var app = Javalin.create(/*config*/);
         var api = new StockApiController();
@@ -15,10 +22,18 @@ public class StockApp {
             post("add/{item_id}/{amount}", ctx -> ctx.json(api.add(ctx.pathParam("item_id"), Integer.parseInt(ctx.pathParam("amount")))));
             post("item/create/{price}", ctx -> ctx.json(api.createItem(Integer.parseInt(ctx.pathParam("price")))));
         });
+        app.sse("/sse", (client) -> {
+            client.sendEvent("connected", "stock-service");
+            client.keepAlive();
+            client.onClose(() -> clients.remove(client));
+            clients.add(client);
+        });
         app.events(event -> {
             event.serverStarted(() -> {
                 try {
-                    StockService.init();
+//                    StockService.init();
+                    PaymentEventsService.listen();
+                    OrderEventsService.listen();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

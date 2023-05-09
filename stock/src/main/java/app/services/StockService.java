@@ -1,23 +1,27 @@
-package services;
+package app.services;
 
+import app.StockApp;
 import com.datastax.driver.core.*;
 import com.datastax.driver.mapping.MappingManager;
-import models.Item;
 
 import java.util.UUID;
-
-import static com.datastax.driver.core.DataType.uuid;
 
 public class StockService {
     static Cluster cluster = null;
     static Session session = null;
     static MappingManager mapper = null;
     static boolean initialized = false;
+
+    public static void sendEvent(String event, String data) {
+        StockApp.clients.forEach(client -> client.sendEvent(event, data));
+    }
+
     public static void createKeyspace(String keyspace) {
         String query = "CREATE KEYSPACE IF NOT EXISTS " + keyspace
                 + " WITH replication = {'class':'SimpleStrategy', 'replication_factor':1};";
         session.execute(query);
     }
+
     public static void useKeyspace(String keyspace) {
         session.execute("USE " + keyspace);
     }

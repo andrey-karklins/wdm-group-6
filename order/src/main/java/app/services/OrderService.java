@@ -1,5 +1,6 @@
-package services;
+package app.services;
 
+import app.OrderApp;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.MappingManager;
@@ -26,6 +27,10 @@ public class OrderService {
             }
         }
         System.out.println("Connection to Cassandra initialized.");
+    }
+
+    public static void sendEvent(String event, String data) {
+        OrderApp.clients.forEach(client -> client.sendEvent(event, data));
     }
 
     // Here implement functions to interact with Cassandra

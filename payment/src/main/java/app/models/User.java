@@ -1,4 +1,4 @@
-package models;
+package app.models;
 
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;

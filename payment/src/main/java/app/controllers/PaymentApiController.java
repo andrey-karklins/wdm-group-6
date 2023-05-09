@@ -1,13 +1,13 @@
-package controllers;
+package app.controllers;
 
+import app.models.User;
+import app.services.PaymentService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import models.User;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import services.PaymentService;
 
 import java.io.IOException;
 import java.util.HashMap;
