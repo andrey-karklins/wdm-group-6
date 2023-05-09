@@ -26,6 +26,7 @@ public class StockApiController {
         return resultMap.toString();
     }
 
+
     public String add(String itemId, int amount) {
         UUID id = UUID.fromString(itemId);
         Row row = stock_service.AddStock(id,amount);

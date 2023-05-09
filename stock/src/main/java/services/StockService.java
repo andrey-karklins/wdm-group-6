@@ -13,7 +13,6 @@ public class StockService {
     static Session session = null;
     static MappingManager mapper = null;
     static boolean initialized = false;
-
     public static void createKeyspace(String keyspace) {
         String query = "CREATE KEYSPACE IF NOT EXISTS " + keyspace
                 + " WITH replication = {'class':'SimpleStrategy', 'replication_factor':1};";

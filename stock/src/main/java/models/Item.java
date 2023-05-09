@@ -10,6 +10,7 @@ public class Item {
     @PartitionKey
     public UUID item_id = UUID.randomUUID();
 
+
     public int stock;
 
     public int price;
