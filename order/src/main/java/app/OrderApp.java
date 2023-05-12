@@ -1,5 +1,6 @@
 package app;
 
+import app.services.OrderService;
 import app.controllers.OrderApiController;
 import app.services.PaymentEventsService;
 import app.services.StockEventsService;
@@ -33,7 +34,7 @@ public class OrderApp {
         app.events(event -> {
             event.serverStarted(() -> {
                 try {
-//                    OrderService.init();
+                    OrderService.init();
                     PaymentEventsService.listen();
                     StockEventsService.listen();
                 } catch (InterruptedException e) {

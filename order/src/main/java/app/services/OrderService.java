@@ -3,17 +3,31 @@ package app.services;
 import app.OrderApp;
 import app.models.Order;
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
-
+import java.util.ArrayList;
 import java.util.UUID;
+import java.util.List;
+
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.ResultSet;
+
+
+
 
 public class OrderService {
     static Cluster cluster = null;
     static Session session = null;
     static MappingManager mapper = null;
     static boolean initialized = false;
+
+    private static PreparedStatement insertOrderStmt;
+    private static PreparedStatement deleteOrderStmt;
+    private static PreparedStatement findOrderStmt;
+    private static PreparedStatement addItemStmt;
+    private static PreparedStatement removeItemStmt;
+    private static PreparedStatement checkoutStmt;
 
     public static void init() throws InterruptedException {
         System.out.println("Initializing connection to Cassandra...");
@@ -27,6 +41,15 @@ public class OrderService {
                 useKeyspace("order_keyspace");
                 createTable("orders");
                 mapper = new MappingManager(session);
+
+                // Prepared statements initialization
+                insertOrderStmt = session.prepare("INSERT INTO orders (order_id, user_id, items, total_cost, paid) VALUES (?, ?, ?, ?, ?)");
+                deleteOrderStmt = session.prepare("DELETE FROM orders WHERE order_id = ?");
+                findOrderStmt = session.prepare("SELECT * FROM orders WHERE order_id = ?");
+                addItemStmt = session.prepare("UPDATE orders SET items = items + ?, total_cost = total_cost + ? WHERE order_id = ?");
+                removeItemStmt = session.prepare("UPDATE orders SET items = items - ?, total_cost = total_cost - ? WHERE order_id = ?");
+                checkoutStmt = session.prepare("UPDATE orders SET paid = true WHERE order_id = ?");
+
                 initialized = true;
             } catch (Exception e) {
                 System.out.println("Cassandra is not ready yet, retrying in 5 seconds...");
@@ -35,79 +58,67 @@ public class OrderService {
         }
         System.out.println("Connection to Cassandra initialized.");
     }
-
-    // other methods...
-
+///
+    //////
     public static void createKeyspace(String keyspace) {
-        String query = "CREATE KEYSPACE IF NOT EXISTS " + keyspace + " WITH replication "
-                + "= {'class':'SimpleStrategy', 'replication_factor':3};";
+        String query = "CREATE KEYSPACE IF NOT EXISTS " + keyspace
+                + " WITH replication = {'class':'SimpleStrategy', 'replication_factor':1};";
         session.execute(query);
     }
 
     public static void useKeyspace(String keyspace) {
-        String query = "USE " + keyspace + ";";
-        session.execute(query);
+        session.execute("USE " + keyspace);
     }
 
     public static void createTable(String tableName) {
         String query = "CREATE TABLE IF NOT EXISTS " + tableName + " ("
-                + "order_id UUID PRIMARY KEY,"
-                + "user_id UUID,"
+                + "order_id uuid PRIMARY KEY,"
                 + "paid boolean,"
-                + "total_cost int,"
-                + "items list<UUID>"
-                + ");";
+                + "items list<uuid>,"
+                + "user_id uuid,"
+                + "total_cost int);";
         session.execute(query);
     }
-
+///////
+    /////
 
     public static void sendEvent(String event, String data) {
         OrderApp.clients.forEach(client -> client.sendEvent(event, data));
     }
-
+////
+    ///
     // Here implement functions to interact with Cassandra
-    public Order createOrder(Order order) {
-        Mapper<Order> orderMapper = mapper.mapper(Order.class);
-        orderMapper.save(order);
-        return order;
+
+    public UUID createOrder(UUID userId) {
+        UUID orderId = UUID.randomUUID();
+        session.execute(insertOrderStmt.bind(orderId, userId, new ArrayList<UUID>(), 0, false));
+        return orderId;
     }
 
-    public void deleteOrder(UUID orderId) {
-        Mapper<Order> orderMapper = mapper.mapper(Order.class);
-        orderMapper.delete(orderId);
+    public boolean cancelOrder(UUID orderId) {
+        session.execute(deleteOrderStmt.bind(orderId));
+        return true;
     }
 
-    public Order findOrder(UUID orderId) {
-        Mapper<Order> orderMapper = mapper.mapper(Order.class);
-        return orderMapper.get(orderId);
+    public boolean addItemToOrder(UUID orderId, UUID itemId) {
+        int price = 1;//dummy
+        session.execute(addItemStmt.bind(List.of(itemId), price, orderId));
+        return true;
     }
 
-    public void addItemToOrder(UUID orderId, UUID itemId) {
-        Mapper<Order> orderMapper = mapper.mapper(Order.class);
-        Order order = orderMapper.get(orderId);
-        if (order != null) {
-            order.items.add(itemId);
-            orderMapper.save(order);
-        }
-    }
-
-    public void removeItemFromOrder(UUID orderId, UUID itemId) {
-        Mapper<Order> orderMapper = mapper.mapper(Order.class);
-        Order order = orderMapper.get(orderId);
-        if (order != null) {
-            order.items.remove(itemId);
-            orderMapper.save(order);
-        }
+    public boolean removeItemFromOrder(UUID orderId, UUID itemId) {
+        int price = 1;//dummy
+        session.execute(removeItemStmt.bind(List.of(itemId), price, orderId));
+        return true;
     }
 
     public boolean checkoutOrder(UUID orderId) {
-        Mapper<Order> orderMapper = mapper.mapper(Order.class);
-        Order order = orderMapper.get(orderId);
-        if (order != null && !order.paid) {
-            order.paid = true;
-            orderMapper.save(order);
-            return true;
-        }
-        return false;
+        session.execute(checkoutStmt.bind(orderId));
+        return true;
+    }
+
+    public Row findOrder(UUID orderId) {
+        ResultSet rs = session.execute(findOrderStmt.bind(orderId));
+        return rs.one();
     }
 }
