@@ -64,13 +64,19 @@ public class PaymentApiController {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
+            boolean orderStatus =  responseJSON.get("paid").asBoolean();
 
             if (!receivedUserId.equals(userId)) {
                 return "userID does not correspond to the one in orderID";
             }
 
+            if (!orderStatus) {
+                return "The order has not been paid yet";
+            }
+
             int cost = responseJSON.get("total_cost").asInt();
             PaymentService.addFunds(UUID.fromString(userId), cost);
+            PaymentService.sendEvent("change_order_status", orderId);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -89,7 +95,7 @@ public class PaymentApiController {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
-            Boolean paid = responseJSON.get("paid").asBoolean();
+            boolean paid = responseJSON.get("paid").asBoolean();
 
             if(receivedUserId.equals(userId)) {
                 res.put("paid", paid);

@@ -28,6 +28,11 @@ public class PaymentEventsService {
                 break;
             // Below events to be handled
             // ... (TODO)
+
+            case "change_order_status":
+                System.out.println(data);
+                break;
+
             default:
                 System.out.println("Unknown event: " + event);
         }
