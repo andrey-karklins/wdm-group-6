@@ -18,4 +18,16 @@ public class Order {
     public int total_cost = 0;
 
     public List<UUID> items;
+
+    public Order() {
+
+    }
+
+    public Order(UUID orderId, UUID userId, boolean paid, int totalCost, List<UUID> items) {
+        this.order_id = orderId;
+        this.user_id = userId;
+        this.paid = paid;
+        this.total_cost = totalCost;
+        this.items = items;
+    }
 }
