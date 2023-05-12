@@ -13,7 +13,7 @@ import java.util.List;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.ResultSet;
 
-
+import com.datastax.driver.mapping.*;
 
 
 public class OrderService {
@@ -29,6 +29,8 @@ public class OrderService {
     private static PreparedStatement removeItemStmt;
     private static PreparedStatement checkoutStmt;
 
+    static Mapper<Order> orderMapper;
+
     public static void init() throws InterruptedException {
         System.out.println("Initializing connection to Cassandra...");
         while (!initialized) {
@@ -40,7 +42,9 @@ public class OrderService {
                 createKeyspace("order_keyspace");
                 useKeyspace("order_keyspace");
                 createTable("orders");
+
                 mapper = new MappingManager(session);
+                orderMapper = mapper.mapper(Order.class);
 
                 // Prepared statements initialization
                 insertOrderStmt = session.prepare("INSERT INTO orders (order_id, user_id, items, total_cost, paid) VALUES (?, ?, ?, ?, ?)");
@@ -100,22 +104,59 @@ public class OrderService {
         return true;
     }
 
+
+
     public boolean addItemToOrder(UUID orderId, UUID itemId) {
-        int price = 1;//dummy
-        session.execute(addItemStmt.bind(List.of(itemId), price, orderId));
+        int itemPrice = 1;//dummy
+        Order order = orderMapper.get(orderId);
+        if (order == null) {
+            return false;
+        }
+        order.items.add(itemId);
+        order.total_cost += itemPrice;
+        System.out.println("Hello, World!");
+        orderMapper.save(order);
         return true;
     }
 
     public boolean removeItemFromOrder(UUID orderId, UUID itemId) {
-        int price = 1;//dummy
-        session.execute(removeItemStmt.bind(List.of(itemId), price, orderId));
+        int itemPrice = 1;//dummy
+        Order order = orderMapper.get(orderId);
+        if (order == null) {
+            return false;
+        }
+        order.items.remove(itemId);
+        order.total_cost -= itemPrice;
+        orderMapper.save(order);
         return true;
     }
 
     public boolean checkoutOrder(UUID orderId) {
-        session.execute(checkoutStmt.bind(orderId));
+        Order order = orderMapper.get(orderId);
+        if (order == null) {
+            return false;
+        }
+        order.paid = true;
+        orderMapper.save(order);
         return true;
     }
+
+//    public boolean addItemToOrder(UUID orderId, UUID itemId) {
+//        int price = 1;//dummy
+//        session.execute(addItemStmt.bind(List.of(itemId), price, orderId));
+//        return true;
+//    }
+//
+//    public boolean removeItemFromOrder(UUID orderId, UUID itemId) {
+//        int price = 1;//dummy
+//        session.execute(removeItemStmt.bind(List.of(itemId), price, orderId));
+//        return true;
+//    }
+//
+//    public boolean checkoutOrder(UUID orderId) {
+//        session.execute(checkoutStmt.bind(orderId));
+//        return true;
+//    }
 
     public Row findOrder(UUID orderId) {
         ResultSet rs = session.execute(findOrderStmt.bind(orderId));
