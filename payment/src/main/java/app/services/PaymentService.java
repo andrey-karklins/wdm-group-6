@@ -20,6 +20,8 @@ public class PaymentService {
     static boolean initialized = false;
     static String keyspace = "payment_keyspace";
 
+    static Mapper<User> mapperUser = null;
+
     public static void sendEvent(String event, String data) {
         PaymentApp.clients.forEach(client -> client.sendEvent(event, data));
     }
@@ -54,6 +56,7 @@ public class PaymentService {
                 createKeyspace(keyspace);
                 useKeyspace(keyspace);
                 createTable("users");
+                mapperUser = mapper.mapper(User.class, keyspace);
 
             } catch (Exception e) {
                 System.out.println("Cassandra is not ready yet, retrying in 5 seconds...");
@@ -71,7 +74,6 @@ public class PaymentService {
         User user = userAccessor.getUserById(user_id);
         if (user != null) {
             user.credit += amount;
-            Mapper<User> mapperUser = mapper.mapper(User.class);
             mapperUser.save(user);
             done = true;
         }
@@ -85,9 +87,8 @@ public class PaymentService {
         User user = new User();
         user.user_id = user_id;
         user.credit = 0;
-        System.out.println(keyspace);
-        Mapper<User> mapperUser = mapper.mapper(User.class, keyspace);
         mapperUser.save(user);
+
         return user_id;
     }
 

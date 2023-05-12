@@ -19,6 +19,8 @@ public class PaymentApiController {
 
     private final String orderUrl = "http://order-service:5000";
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
     public String pay(String userId, String orderId, int amount) {
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
@@ -26,7 +28,7 @@ public class PaymentApiController {
             HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
             String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
 
-            ObjectMapper mapper = new ObjectMapper();
+
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
 
@@ -61,22 +63,21 @@ public class PaymentApiController {
             HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
             String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
 
-            ObjectMapper mapper = new ObjectMapper();
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
             boolean orderStatus =  responseJSON.get("paid").asBoolean();
 
-            if (!receivedUserId.equals(userId)) {
-                return "userID does not correspond to the one in orderID";
-            }
-
-            if (!orderStatus) {
-                return "The order has not been paid yet";
-            }
+//            if (!receivedUserId.equals(userId)) {
+//                return "userID does not correspond to the one in orderID";
+//            }
+//
+//            if (!orderStatus) {
+//                return "The order has not been paid yet";
+//            }
 
             int cost = responseJSON.get("total_cost").asInt();
             PaymentService.addFunds(UUID.fromString(userId), cost);
-            PaymentService.sendEvent("change_order_status", orderId);
+            PaymentService.sendEvent("OrderCanceled", orderId);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -92,7 +93,6 @@ public class PaymentApiController {
             HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
             String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
 
-            ObjectMapper mapper = new ObjectMapper();
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
             boolean paid = responseJSON.get("paid").asBoolean();

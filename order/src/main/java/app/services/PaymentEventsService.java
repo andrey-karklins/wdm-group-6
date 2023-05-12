@@ -5,6 +5,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class PaymentEventsService {
@@ -29,7 +30,9 @@ public class PaymentEventsService {
             // Below events to be handled
             // ... (TODO)
 
-            case "change_order_status":
+            case "OrderCanceled":
+                OrderService.cancelOrder(UUID.fromString(data));
+                System.out.println("called");
                 System.out.println(data);
                 break;
 
