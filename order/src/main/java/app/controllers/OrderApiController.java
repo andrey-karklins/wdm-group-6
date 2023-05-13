@@ -46,7 +46,6 @@ public class OrderApiController {
 
 
     public String addItem(String orderId, String itemId) {
-        OrderService.sendEvent("ifItemExists",orderId+" "+itemId);
         UUID orderIdUUID = UUID.fromString(orderId);
         UUID itemIdUUID = UUID.fromString(itemId);
         boolean result = orderService.addItemToOrder(orderIdUUID, itemIdUUID);

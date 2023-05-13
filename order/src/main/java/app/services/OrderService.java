@@ -91,14 +91,11 @@ public class OrderService {
 
     //TODO Retrieve the price from the stock microservice
     public boolean addItemToOrder(UUID orderId, UUID itemId) {
+
         int itemPrice = 1;//dummy
         Order order =  findOrderById(orderId);
         if (order == null) {
             return false;
-        }
-
-        if (order.items == null) {
-            order.items = new ArrayList<>();
         }
 
         order.items.add(itemId);
@@ -113,10 +110,6 @@ public class OrderService {
         int itemPrice = 1;//dummy
         Order order =  findOrderById(orderId);
         if (order == null) {
-            return false;
-        }
-
-        if (order.items == null) {
             return false;
         }
         order.items.remove(itemId);

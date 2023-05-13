@@ -1,13 +1,12 @@
 package app.services;
-import java.util.UUID;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
-import com.datastax.driver.core.*;
 import java.util.concurrent.TimeUnit;
-import app.services.StockService;
+
 public class OrderEventsService {
     private static boolean connected = false;
     public static void listen() throws InterruptedException {
@@ -29,32 +28,6 @@ public class OrderEventsService {
                 break;
             // Below events to be handled
             // ... (TODO)
-            case "ifItemExists":
-//OrderService.sendEvent("ifItemExists",orderId+" "+itemId);
-                String[] parts = data.split(" ");
-                String orderId = parts[0];
-                String itemId = parts[1];
-                UUID order_id = UUID.fromString(orderId);
-                UUID item_id=UUID.fromString(itemId);
-                StockService stockService = new StockService();
-                Row res = stockService.findItemByID(item_id);
-                int price=0;
-                //cant find item
-                if( res ==  null){
-                    price=-2;
-                }
-                //item stock is zero
-                if (res.getInt("stock")==0)
-                {
-                    price=-1;
-                }
-                //there is enough stock of item
-                if (res.getInt("stock")>=1){
-                    price = res.getInt("price");
-                    Row sub = stockService.SubStock(item_id,1);
-                }
-                System.out.println(price);
-                StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(price));
             default:
                 System.out.println("Unknown event: " + event);
         }

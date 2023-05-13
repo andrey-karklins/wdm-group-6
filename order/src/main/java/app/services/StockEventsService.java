@@ -28,9 +28,6 @@ public class StockEventsService {
                 break;
             // Below events to be handled
             // ... (TODO)
-            case "ItemStock":
-                System.out.println("ItemStock: " + data);
-                break;
             default:
                 System.out.println("Unknown event: " + event);
         }
