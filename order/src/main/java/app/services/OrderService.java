@@ -114,6 +114,10 @@ public class OrderService {
         if (order == null) {
             return false;
         }
+
+        if (order.items == null) {
+            return false;
+        }
         order.items.remove(itemId);
         order.total_cost -= itemPrice;
         orderMapper.save(order);
