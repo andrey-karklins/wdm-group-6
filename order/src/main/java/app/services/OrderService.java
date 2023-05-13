@@ -98,6 +98,10 @@ public class OrderService {
             return false;
         }
 
+        if (order.items == null) {
+            order.items = new ArrayList<>();
+        }
+
         order.items.add(itemId);
         order.total_cost += itemPrice;
         orderMapper.save(order);
