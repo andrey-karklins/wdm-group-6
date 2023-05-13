@@ -44,12 +44,12 @@ public class OrderEventsService {
                     price=-2;
                 }
                 //item stock is zero
-                if (res.getInt("stock")==0)
+                if (res!=null && res.getInt("stock")==0)
                 {
                     price=-1;
                 }
                 //there is enough stock of item
-                if (res.getInt("stock")>=1){
+                if (res!=null && res.getInt("stock")>=1){
                     price = res.getInt("price");
                     Row sub = stockService.SubStock(item_id,1);
                 }
