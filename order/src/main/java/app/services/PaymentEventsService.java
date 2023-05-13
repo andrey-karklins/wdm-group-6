@@ -28,6 +28,9 @@ public class PaymentEventsService {
                 break;
             // Below events to be handled
             // ... (TODO)
+            case "ifItemExists":
+                System.out.println("payment received it too");
+                break;
             default:
                 System.out.println("Unknown event: " + event);
         }

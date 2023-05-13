@@ -28,6 +28,8 @@ public class OrderEventsService {
                 break;
             // Below events to be handled
             // ... (TODO)
+            case "ifItemExists":
+                break;
             default:
                 System.out.println("Unknown event: " + event);
         }

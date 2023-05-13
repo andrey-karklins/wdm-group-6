@@ -89,7 +89,6 @@ public class OrderService {
 
     //TODO Retrieve the price from the stock microservice
     public boolean addItemToOrder(UUID orderId, UUID itemId) {
-
         int itemPrice = 1;//dummy
         Order order =  findOrderById(orderId);
         if (order == null) {
