@@ -20,8 +20,6 @@ public class OrderService {
     static Session session = null;
     static MappingManager mapper = null;
     static boolean initialized = false;
-    static Mapper<Order> mapperOrder = null;
-
     private static String keyspace = "order_keyspace";
 
     static Mapper<Order> orderMapper;
@@ -82,7 +80,7 @@ public class OrderService {
         return orderId;
     }
 
-    public boolean cancelOrder(UUID orderId) {
+    public static boolean cancelOrder(UUID orderId) {
         OrderAccessor orderAccessor = mapper.createAccessor(OrderAccessor.class);
         Order order =  orderAccessor.getOrderById(orderId);
         orderMapper.delete(order);

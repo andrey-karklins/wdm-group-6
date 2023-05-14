@@ -32,8 +32,9 @@ public class PaymentEventsService {
 
             case "OrderCanceled":
                 OrderService.cancelOrder(UUID.fromString(data));
-                System.out.println("called");
-                System.out.println(data);
+                break;
+            case "PaymentSucceeded":
+                OrderService.changePaidStatus(UUID.fromString(data));
                 break;
 
             default:

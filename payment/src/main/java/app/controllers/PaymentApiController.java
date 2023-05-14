@@ -44,10 +44,16 @@ public class PaymentApiController {
             //Should the endpoint use the cost in the order instance or the amount provided by the endpoint?
             int cost = responseJSON.get("total_cost").asInt();
 
+            if (cost != amount) {
+                return "Wrong Amount to pay for the order.";
+            }
+
             boolean status = PaymentService.addFunds(UUID.fromString(userId), -1*amount);
             if (status) {
+                PaymentService.sendEvent("PaymentSucceeded", orderId);
                 return "Payment went through.";
             }
+
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -67,13 +73,13 @@ public class PaymentApiController {
             String receivedUserId = responseJSON.get("user_id").asText();
             boolean orderStatus =  responseJSON.get("paid").asBoolean();
 
-//            if (!receivedUserId.equals(userId)) {
-//                return "userID does not correspond to the one in orderID";
-//            }
-//
-//            if (!orderStatus) {
-//                return "The order has not been paid yet";
-//            }
+            if (!receivedUserId.equals(userId)) {
+                return "userID does not correspond to the one in orderID";
+            }
+
+            if (!orderStatus) {
+                return "The order has not been paid yet";
+            }
 
             int cost = responseJSON.get("total_cost").asInt();
             PaymentService.addFunds(UUID.fromString(userId), cost);
