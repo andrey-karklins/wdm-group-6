@@ -35,8 +35,6 @@ spec:
             requests:
               memory: "1Gi"
               cpu: "1"
-          command: [ "gunicorn" ]
-          args: [ "-b", "0.0.0.0:5000", "app:app" ]
           ports:
             - containerPort: 5000
           env:
@@ -44,11 +42,5 @@ spec:
               value: "user-service"
             - name: STOCK_SERVICE_URL
               value: "stock-service"
-            - name: REDIS_HOST
-              value: redis-master
-            - name: REDIS_PORT
-              value: '6379'
-            - name: REDIS_PASSWORD
-              value: "redis"
-            - name: REDIS_DB
-              value: "0"
+            - name: CASSANDRA_CLUSTER_NAME
+              value: order-cluster
