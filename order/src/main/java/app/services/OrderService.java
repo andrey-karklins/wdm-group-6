@@ -7,6 +7,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.MappingManager;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.datastax.driver.mapping.*;
 import com.datastax.driver.mapping.annotations.Accessor;
@@ -21,6 +22,8 @@ public class OrderService {
     static boolean initialized = false;
 
     private static String keyspace = "order_keyspace";
+
+    static ConcurrentHashMap<String, Integer> priceMap = new ConcurrentHashMap<>();
 
     static Mapper<Order> orderMapper;
 
@@ -89,7 +92,9 @@ public class OrderService {
 
     //TODO Retrieve the price from the stock microservice
     public boolean addItemToOrder(UUID orderId, UUID itemId) {
-        int itemPrice = 1;//dummy
+//        int itemPrice = 1;//dummy
+        int itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
+        if (itemPrice == -1 || itemPrice == -2);
         Order order =  findOrderById(orderId);
         if (order == null) {
             return false;
@@ -108,7 +113,8 @@ public class OrderService {
 
     //TODO Retrieve the price from the stock microservice
     public boolean removeItemFromOrder(UUID orderId, UUID itemId) {
-        int itemPrice = 1;//dummy
+//        int itemPrice = 1;//dummy
+        int itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
         Order order =  findOrderById(orderId);
         if (order == null) {
             return false;

@@ -30,6 +30,10 @@ public class StockEventsService {
             // ... (TODO)
             case "ItemStock":
                 System.out.println("ItemStock: " + data);
+                String orderId = data.split(" ")[0];
+                String itemId = data.split(" ")[1];
+                int price = Integer.parseInt(data.split(" ")[2]);
+                OrderService.priceMap.put(orderId + " " + itemId, price);
                 break;
             default:
                 System.out.println("Unknown event: " + event);
