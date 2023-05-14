@@ -37,6 +37,9 @@ public class PaymentEventsService {
                 OrderService.changePaidStatus(UUID.fromString(data));
                 break;
 
+            case "ifItemExists":
+                System.out.println("payment received it too");
+                break;
             default:
                 System.out.println("Unknown event: " + event);
         }

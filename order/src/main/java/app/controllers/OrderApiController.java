@@ -21,6 +21,17 @@ public class OrderApiController {
     }
 
     public String cancelOrder(String orderId) {
+        Order resultOrder = OrderService.findOrderById(UUID.fromString(orderId));
+        String items = "";
+        for (int i = 0; i < resultOrder.items.size(); i++) {
+            items += resultOrder.items.get(i).toString();
+            if(i!=resultOrder.items.size()-1)
+            {
+                items+=" ";
+            }
+        }
+        OrderService.sendEvent("OrderCanceled", orderId);
+        OrderService.sendEvent("OrderFailed", items);
         UUID orderIdUUID = UUID.fromString(orderId);
         boolean result = orderService.cancelOrder(orderIdUUID);
         return result ? "Success" : "Failure";
@@ -46,6 +57,7 @@ public class OrderApiController {
 
 
     public String addItem(String orderId, String itemId) {
+        OrderService.sendEvent("ifItemExists",orderId+" "+itemId);
         UUID orderIdUUID = UUID.fromString(orderId);
         UUID itemIdUUID = UUID.fromString(itemId);
         boolean result = orderService.addItemToOrder(orderIdUUID, itemIdUUID);
@@ -53,6 +65,7 @@ public class OrderApiController {
     }
 
     public String removeItem(String orderId, String itemId) {
+        OrderService.sendEvent("ItemRemoval", orderId + " " + itemId);
         UUID orderIdUUID = UUID.fromString(orderId);
         UUID itemIdUUID = UUID.fromString(itemId);
         boolean result = orderService.removeItemFromOrder(orderIdUUID, itemIdUUID);
