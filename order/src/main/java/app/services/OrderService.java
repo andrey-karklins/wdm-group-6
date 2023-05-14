@@ -94,7 +94,9 @@ public class OrderService {
     public boolean addItemToOrder(UUID orderId, UUID itemId) {
 //        int itemPrice = 1;//dummy
         int itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
-        if (itemPrice == -1 || itemPrice == -2);
+        if (itemPrice == -1 || itemPrice == -2) { //-1 = No stock, -2 = non-exist
+            return false;
+        };
         Order order =  findOrderById(orderId);
         if (order == null) {
             return false;

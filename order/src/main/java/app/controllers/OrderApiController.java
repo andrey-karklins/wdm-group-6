@@ -54,6 +54,7 @@ public class OrderApiController {
     }
 
     public String removeItem(String orderId, String itemId) {
+        OrderService.sendEvent("ItemRemoval", orderId + " " + itemId);
         UUID orderIdUUID = UUID.fromString(orderId);
         UUID itemIdUUID = UUID.fromString(itemId);
         boolean result = orderService.removeItemFromOrder(orderIdUUID, itemIdUUID);
