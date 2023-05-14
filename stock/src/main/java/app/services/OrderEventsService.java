@@ -21,11 +21,30 @@ public class OrderEventsService {
         }
     }
 
-    private static void HandleAddItem(String data){
-        String[] parts = data.split(" ");
-        String orderId = parts[0];
-        String itemId = parts[1];
-        UUID order_id = UUID.fromString(orderId);
+    private static void handler(String event, String data) {
+        switch (event) {
+            case "connected":
+                System.out.println("Connected to " + data);
+                connected = true;
+                break;
+            // Below events to be handled
+            // ... (TODO)
+            case "ifItemExists":
+//OrderService.sendEvent("ifItemExists",orderId+" "+itemId);
+                HandlerAddItem(data);
+                break;
+            case "ItemRemoval":
+                HandlerRemoveItem(data);
+                break;
+            default:
+                System.out.println("Unknown event: " + event);
+        }
+    }
+
+    private static void HandlerAddItem(String data){
+        String[] parts =data.split(" ");
+        String orderId =parts[0];
+        String itemId =parts[1];
         UUID item_id=UUID.fromString(itemId);
         StockService stockService = new StockService();
         Row res = stockService.findItemByID(item_id);
@@ -47,11 +66,10 @@ public class OrderEventsService {
         System.out.println(price);
         StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(price));
     }
-    private static void HandleRemoveItem(String data){
+    private static void HandlerRemoveItem(String data){
         String[] parts = data.split(" ");
         String orderId = parts[0];
         String itemId = parts[1];
-        UUID order_id = UUID.fromString(orderId);
         UUID item_id=UUID.fromString(itemId);
         StockService stockService = new StockService();
         Row res = stockService.findItemByID(item_id);
@@ -67,24 +85,5 @@ public class OrderEventsService {
         }
         System.out.println(price);
         StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(price));
-    }
-    private static void handler(String event, String data) {
-        switch (event) {
-            case "connected":
-                System.out.println("Connected to " + data);
-                connected = true;
-                break;
-            // Below events to be handled
-            // ... (TODO)
-            case "ifItemExists":
-//OrderService.sendEvent("ifItemExists",orderId+" "+itemId);
-                HandleAddItem(data);
-                break;
-            case "ItemRemoval":
-                HandleRemoveItem(data0);
-                break;
-            default:
-                System.out.println("Unknown event: " + event);
-        }
     }
 }
