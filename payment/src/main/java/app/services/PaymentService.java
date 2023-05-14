@@ -1,6 +1,7 @@
 package app.services;
 
 import app.PaymentApp;
+import app.PaymentError;
 import app.models.User;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
@@ -77,6 +78,9 @@ public class PaymentService {
             mapperUser.save(user);
             done = true;
         }
+        else {
+            throw new PaymentError("User not found");
+        }
         return done;
     }
 
@@ -92,9 +96,9 @@ public class PaymentService {
         return user_id;
     }
 
-    public static User findUserById(UUID user_id) {
-        UserAccessor userAccessor = mapper.createAccessor(UserAccessor.class);
-        return userAccessor.getUserById(user_id);
+    public static User findUserById(UUID user_id)  {
+            UserAccessor userAccessor = mapper.createAccessor(UserAccessor.class);
+            return userAccessor.getUserById(user_id);
     }
 
     @Accessor

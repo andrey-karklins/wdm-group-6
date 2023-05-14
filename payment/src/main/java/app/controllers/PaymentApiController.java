@@ -1,9 +1,11 @@
 package app.controllers;
 
+import app.PaymentError;
 import app.models.User;
 import app.services.PaymentService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.HttpException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -59,7 +61,6 @@ public class PaymentApiController {
             e.printStackTrace();
         }
 
-
         return "Payment failed";
     }
 
@@ -83,7 +84,7 @@ public class PaymentApiController {
 
             int cost = responseJSON.get("total_cost").asInt();
             PaymentService.addFunds(UUID.fromString(userId), cost);
-            PaymentService.sendEvent("OrderCanceled", orderId);
+            PaymentService.sendEvent("OrderCanceled", responseJSON.toString());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -130,10 +131,13 @@ public class PaymentApiController {
     public Map<String, Object> findUser(String userId) {
         Map<String, Object> res = new HashMap<>();
         User user = PaymentService.findUserById(UUID.fromString(userId));
+
         if (user != null) {
-            res.put("userId", user.user_id.toString());
-            res.put("credit", user.credit);
-        }
+             res.put("userId", user.user_id.toString());
+             res.put("credit", user.credit);
+            }
+        else throw new PaymentError("User not found");
         return res;
+
     }
 }
