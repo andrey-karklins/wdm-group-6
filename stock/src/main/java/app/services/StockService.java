@@ -71,7 +71,7 @@ public class StockService {
         BoundStatement boundStatement = preparedStatement.bind(itemID);
         ResultSet resultSet=session.execute(boundStatement);
 //        System.out.println(m2);
-        System.out.println("Item ID data type: " + itemID.getClass().getName());
+//        System.out.println("Item ID data type: " + itemID.getClass().getName());
         return resultSet.one();
     }
     public UUID CreateItem(int price) {
@@ -80,9 +80,9 @@ public class StockService {
 //        BoundStatement boundStatement = preparedStatement.bind(id, 0, price);
 //        session.execute(boundStatement);
         UUID id= UUID.randomUUID();
-        System.out.println(id);
+//        System.out.println(id);
         String query = "INSERT INTO items (item_id, stock, price) VALUES ("+id+",0,"+price+")";
-        System.out.println(query);
+//        System.out.println(query);
         session.execute(query);
 
         return id;

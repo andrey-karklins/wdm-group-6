@@ -1,4 +1,5 @@
 package app.services;
+import java.util.Objects;
 import java.util.UUID;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -36,54 +37,73 @@ public class OrderEventsService {
             case "ItemRemoval":
                 HandlerRemoveItem(data);
                 break;
+            case "OrderFailed":
+                HandlerOrderFailed(data);
+                break;
             default:
                 System.out.println("Unknown event: " + event);
         }
     }
 
     private static void HandlerAddItem(String data){
-        String[] parts =data.split(" ");
-        String orderId =parts[0];
-        String itemId =parts[1];
-        UUID item_id=UUID.fromString(itemId);
-        StockService stockService = new StockService();
-        Row res = stockService.findItemByID(item_id);
-        int price=0;
-        //cant find item
-        if( res ==  null){
-            price=-2;
+        String[] part =data.split(" ");
+        String orderId =part[0];
+        String itemId =part[1];
+        UUID itemid=UUID.fromString(itemId);
+        StockService stockervice = new StockService();
+        Row result = stockervice.findItemByID(itemid);
+        int item_price=0;
+        //cant find the item
+        if( result ==  null)
+            item_price=-2;
+        //the item stock is zero
+        if (result!=null && result.getInt("stock")==0)
+            item_price=-1;
+        //there is enough stock of the item
+        if (result!=null && result.getInt("stock")>=1){
+            item_price = result.getInt("price");
+            Row sub = stockervice.SubStock(itemid,1);
         }
-        //item stock is zero
-        if (res!=null && res.getInt("stock")==0)
-        {
-            price=-1;
-        }
-        //there is enough stock of item
-        if (res!=null && res.getInt("stock")>=1){
-            price = res.getInt("price");
-            Row sub = stockService.SubStock(item_id,1);
-        }
-        System.out.println(price);
-        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(price));
+//        System.out.println(item_price);
+        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(item_price));
     }
+
+
     private static void HandlerRemoveItem(String data){
-        String[] parts = data.split(" ");
-        String orderId = parts[0];
-        String itemId = parts[1];
-        UUID item_id=UUID.fromString(itemId);
-        StockService stockService = new StockService();
-        Row res = stockService.findItemByID(item_id);
-        int price=0;
-        //cant find item
-        if( res ==  null){
-            price = -2;
+        String[] part = data.split(" ");
+        String orderId = part[0];
+        String itemId = part[1];
+        UUID itemid=UUID.fromString(itemId);
+        StockService stockservice = new StockService();
+        Row result = stockservice.findItemByID(itemid);
+        int item_price=0;
+        //cant find the item
+        if( result ==  null)
+            item_price = -2;
+
+        //there is enough stock of the item
+        if (result!=null){
+            item_price = result.getInt("price");
+            Row subtract = stockservice.AddStock(itemid,1);
         }
-        //there is enough stock of item
-        if (res!=null && res.getInt("stock")>=1){
-            price = res.getInt("price");
-            Row sub = stockService.AddStock(item_id,1);
+//        System.out.println(item_price);
+        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(item_price));
+
+    }
+    private static void HandlerOrderFailed(String data)
+    {
+        if (Objects.equals(data, ""))
+            return;
+
+        String[] uuidStrings = data.split(" ");
+        UUID[] uuids = new UUID[uuidStrings.length];
+        StockService stockservice = new StockService();
+        System.out.println(data);
+
+        for (int i = 0; i < uuidStrings.length; i++) {
+            System.out.println(uuidStrings[i]);
+            uuids[i] = UUID.fromString(uuidStrings[i]);
+            Row subtract = stockservice.AddStock(uuids[i],1);
         }
-        System.out.println(price);
-        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(price));
     }
 }

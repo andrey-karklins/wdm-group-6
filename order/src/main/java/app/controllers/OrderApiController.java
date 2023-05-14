@@ -25,6 +25,10 @@ public class OrderApiController {
         String items = "";
         for (int i = 0; i < resultOrder.items.size(); i++) {
             items += resultOrder.items.get(i).toString();
+            if(i!=resultOrder.items.size()-1)
+            {
+                items+=" ";
+            }
         }
         OrderService.sendEvent("OrderCanceled", orderId);
         OrderService.sendEvent("OrderFailed", items);
