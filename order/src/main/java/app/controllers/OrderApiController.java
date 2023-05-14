@@ -21,6 +21,13 @@ public class OrderApiController {
     }
 
     public String cancelOrder(String orderId) {
+        Order resultOrder = OrderService.findOrderById(UUID.fromString(orderId));
+        String items = "";
+        for (int i = 0; i < resultOrder.items.size(); i++) {
+            items += resultOrder.items.get(i).toString();
+        }
+        OrderService.sendEvent("OrderCanceled", orderId);
+        OrderService.sendEvent("OrderFailed", items);
         UUID orderIdUUID = UUID.fromString(orderId);
         boolean result = orderService.cancelOrder(orderIdUUID);
         return result ? "Success" : "Failure";
