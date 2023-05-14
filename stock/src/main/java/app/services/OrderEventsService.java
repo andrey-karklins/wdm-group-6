@@ -9,6 +9,18 @@ import com.datastax.driver.core.*;
 import java.util.concurrent.TimeUnit;
 import app.services.StockService;
 public class OrderEventsService {
+    private static boolean connected = false;
+    public static void listen() throws InterruptedException {
+        Client client = ClientBuilder.newBuilder().build();
+        WebTarget target = client.target("http://order-service:5000/sse");
+        SseEventSource sseEventSource = SseEventSource.target(target).reconnectingEvery(1, TimeUnit.SECONDS).build();
+        sseEventSource.register(event -> handler(event.getName(), event.readData(String.class)));
+        sseEventSource.open();
+        while(!connected) {
+            Thread.sleep(1000);
+        }
+    }
+
     private static void HandleAddItem(String data){
         String[] parts = data.split(" ");
         String orderId = parts[0];
@@ -56,19 +68,6 @@ public class OrderEventsService {
         System.out.println(price);
         StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(price));
     }
-    private static boolean connected = false;
-    public static void listen() throws InterruptedException {
-        Client client = ClientBuilder.newBuilder().build();
-        WebTarget target = client.target("http://order-service:5000/sse");
-        SseEventSource sseEventSource = SseEventSource.target(target).reconnectingEvery(1, TimeUnit.SECONDS).build();
-        sseEventSource.register(event -> handler(event.getName(), event.readData(String.class)));
-        sseEventSource.open();
-        while(!connected) {
-            Thread.sleep(1000);
-        }
-    }
-
-
     private static void handler(String event, String data) {
         switch (event) {
             case "connected":
