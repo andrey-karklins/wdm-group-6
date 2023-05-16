@@ -37,10 +37,3 @@ spec:
               cpu: "1"
           ports:
             - containerPort: 5000
-          env:
-            - name: USER_SERVICE_URL
-              value: "user-service"
-            - name: STOCK_SERVICE_URL
-              value: "stock-service"
-            - name: CASSANDRA_CLUSTER_NAME
-              value: order-cluster

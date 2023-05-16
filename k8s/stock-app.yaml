@@ -37,6 +37,3 @@ spec:
               cpu: "1"
           ports:
             - containerPort: 5000
-          env:
-            - name: CASSANDRA_CLUSTER_NAME
-              value: stock-cluster
