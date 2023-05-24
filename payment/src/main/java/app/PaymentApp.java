@@ -2,6 +2,7 @@ package app;
 
 import app.controllers.PaymentApiController;
 import app.services.OrderEventsService;
+import app.services.PaymentService;
 import app.services.StockEventsService;
 import io.javalin.Javalin;
 import io.javalin.http.sse.SseClient;
@@ -33,7 +34,7 @@ public class PaymentApp {
         app.events(event -> {
             event.serverStarted(() -> {
                 try {
-//                    PaymentService.init();
+                    PaymentService.init();
                     OrderEventsService.listen();
                     StockEventsService.listen();
                 } catch (InterruptedException e) {

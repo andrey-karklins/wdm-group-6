@@ -5,6 +5,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class PaymentEventsService {
@@ -28,6 +29,17 @@ public class PaymentEventsService {
                 break;
             // Below events to be handled
             // ... (TODO)
+
+            case "OrderCanceled":
+                OrderService.cancelOrder(UUID.fromString(data));
+                break;
+            case "PaymentSucceeded":
+                OrderService.changePaidStatus(UUID.fromString(data));
+                break;
+
+            case "ifItemExists":
+                System.out.println("payment received it too");
+                break;
             default:
                 System.out.println("Unknown event: " + event);
         }

@@ -1,9 +1,11 @@
 package app.controllers;
 
+import app.PaymentError;
 import app.models.User;
 import app.services.PaymentService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.HttpException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -19,6 +21,8 @@ public class PaymentApiController {
 
     private final String orderUrl = "http://order-service:5000";
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
     public String pay(String userId, String orderId, int amount) {
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
@@ -26,7 +30,7 @@ public class PaymentApiController {
             HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
             String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
 
-            ObjectMapper mapper = new ObjectMapper();
+
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
 
@@ -42,15 +46,20 @@ public class PaymentApiController {
             //Should the endpoint use the cost in the order instance or the amount provided by the endpoint?
             int cost = responseJSON.get("total_cost").asInt();
 
+            if (cost != amount) {
+                return "Wrong Amount to pay for the order.";
+            }
+
             boolean status = PaymentService.addFunds(UUID.fromString(userId), -1*amount);
             if (status) {
+                PaymentService.sendEvent("PaymentSucceeded", orderId);
                 return "Payment went through.";
             }
+
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-
 
         return "Payment failed";
     }
@@ -61,16 +70,21 @@ public class PaymentApiController {
             HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
             String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
 
-            ObjectMapper mapper = new ObjectMapper();
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
+            boolean orderStatus =  responseJSON.get("paid").asBoolean();
 
             if (!receivedUserId.equals(userId)) {
                 return "userID does not correspond to the one in orderID";
             }
 
+            if (!orderStatus) {
+                return "The order has not been paid yet";
+            }
+
             int cost = responseJSON.get("total_cost").asInt();
             PaymentService.addFunds(UUID.fromString(userId), cost);
+            PaymentService.sendEvent("OrderCanceled", responseJSON.toString());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -86,10 +100,9 @@ public class PaymentApiController {
             HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
             String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
 
-            ObjectMapper mapper = new ObjectMapper();
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
-            Boolean paid = responseJSON.get("paid").asBoolean();
+            boolean paid = responseJSON.get("paid").asBoolean();
 
             if(receivedUserId.equals(userId)) {
                 res.put("paid", paid);
@@ -118,10 +131,13 @@ public class PaymentApiController {
     public Map<String, Object> findUser(String userId) {
         Map<String, Object> res = new HashMap<>();
         User user = PaymentService.findUserById(UUID.fromString(userId));
+
         if (user != null) {
-            res.put("userId", user.user_id.toString());
-            res.put("credit", user.credit);
-        }
+             res.put("userId", user.user_id.toString());
+             res.put("credit", user.credit);
+            }
+        else throw new PaymentError("User not found");
         return res;
+
     }
 }
