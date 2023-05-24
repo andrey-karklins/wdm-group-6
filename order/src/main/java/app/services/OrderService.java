@@ -6,6 +6,8 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +16,16 @@ import com.datastax.driver.mapping.*;
 import com.datastax.driver.mapping.annotations.Accessor;
 import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 
 public class OrderService {
@@ -23,6 +35,7 @@ public class OrderService {
     static boolean initialized = false;
     private static String keyspace = "order_keyspace";
 
+    private final String stockUrl = "http://stock-service:5000";
     static ConcurrentHashMap<String, Integer> priceMap = new ConcurrentHashMap<>();
 
     static Mapper<Order> orderMapper;
@@ -93,10 +106,17 @@ public class OrderService {
     //TODO Retrieve the price from the stock microservice
     public boolean addItemToOrder(UUID orderId, UUID itemId) {
 //        int itemPrice = 1;//dummy
-        int itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
-        if (itemPrice == -1 || itemPrice == -2) { //-1 = No stock, -2 = non-exist
+
+        JsonNode item = requestItem(itemId);
+
+        assert item != null;
+        int itemPrice = item.get("price").asInt();
+        int itemStock = item.get("stock").asInt();
+
+        if(itemStock < 1) {
             return false;
-        };
+        }
+
         Order order =  findOrderById(orderId);
         if (order == null) {
             return false;
@@ -131,6 +151,26 @@ public class OrderService {
         return true;
     }
 
+    /**
+     * Sends a request to the stockService to find the item, given the UUID
+     * @param itemId the UUID of the item
+     * @return the JSON representation of the item
+     */
+    private JsonNode requestItem(UUID itemId)  {
+        // Build the request URL
+        String url = stockUrl + "/find/" + itemId.toString();
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpGet request = new HttpGet(url);
+            String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
+            ObjectMapper JSONmapper = new ObjectMapper();
+            return JSONmapper.readTree(response);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 
     /**
      * Finds and returns an order object given an unique orderId
