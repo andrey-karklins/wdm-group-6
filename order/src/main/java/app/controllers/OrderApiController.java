@@ -3,21 +3,18 @@ package app.controllers;
 import app.services.OrderService;
 import app.models.Order;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
 public class OrderApiController {
     private static final OrderService orderService = new OrderService();
 
-    public String createOrder(String userId) {
+    public Map<String, String> createOrder(String userId) {
         UUID userIdUUID = UUID.fromString(userId);
         UUID orderId = orderService.createOrder(userIdUUID);
-        Map<String, String> res = Map.of("user_id", userId, "order_id", orderId.toString());
-        return "user id: " + userId + " " + "order id: " + orderId.toString();
+        Map<String, String> res = Map.of("order_id", orderId.toString());
+        return res;
     }
 
     public String cancelOrder(String orderId) {
