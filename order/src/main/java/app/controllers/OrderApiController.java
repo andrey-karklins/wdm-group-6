@@ -33,7 +33,7 @@ public class OrderApiController {
         OrderService.sendEvent("OrderCanceled", orderId);
         OrderService.sendEvent("OrderFailed", items);
         UUID orderIdUUID = UUID.fromString(orderId);
-        boolean result = orderService.cancelOrder(orderIdUUID);
+        boolean result = OrderService.cancelOrder(orderIdUUID);
         return result ? "Success" : "Failure";
     }
 

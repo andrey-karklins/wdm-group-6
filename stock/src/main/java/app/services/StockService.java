@@ -30,7 +30,7 @@ public class StockService {
         String query = "CREATE TABLE IF NOT EXISTS " + tableName + " ("
                 + "item_id uuid PRIMARY KEY,"
                 + "stock int,"
-                + "price int);";
+                + "price float);";
         session.execute(query);
         query = "INSERT INTO items (item_id, stock, price) VALUES (9552eace-06a7-4a5e-a90d-9200063ed94a,100,6)";
         session.execute(query);
@@ -74,7 +74,7 @@ public class StockService {
 //        System.out.println("Item ID data type: " + itemID.getClass().getName());
         return resultSet.one();
     }
-    public UUID CreateItem(int price) {
+    public UUID CreateItem(float price) {
 //        PreparedStatement preparedStatement = session.prepare(query);
 //         Bind the values to the query
 //        BoundStatement boundStatement = preparedStatement.bind(id, 0, price);

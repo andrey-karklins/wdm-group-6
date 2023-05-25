@@ -40,7 +40,7 @@ public class PaymentService {
     public static void createTable(String tableName) {
         String query = "CREATE TABLE IF NOT EXISTS " + tableName + " ("
                 + "user_id uuid PRIMARY KEY,"
-                + "credit int);";
+                + "credit float);";
         session.execute(query);
     }
 
@@ -69,7 +69,7 @@ public class PaymentService {
 
 
     // Function to add funds to user's account
-    public static boolean addFunds(UUID user_id, int amount) {
+    public static boolean addFunds(UUID user_id, float amount) {
         boolean done = false;
         UserAccessor userAccessor = mapper.createAccessor(UserAccessor.class);
         User user = userAccessor.getUserById(user_id);
@@ -90,7 +90,7 @@ public class PaymentService {
         UUID user_id = UUID.randomUUID();
         User user = new User();
         user.user_id = user_id;
-        user.credit = 0;
+        user.credit = 0.0f;
         mapperUser.save(user);
 
         return user_id;

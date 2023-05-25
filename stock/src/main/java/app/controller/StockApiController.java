@@ -11,7 +11,7 @@ public class StockApiController {
         UUID uuid = UUID.fromString(itemId);
         Row row= stock_service.findItemByID(uuid);
 //      return Map.of("stock", 10, "price", 100);
-        return Map.of("item_id", row.getUUID("item_id"), "stock", row.getInt("stock"), "price", row.getInt("price"));
+        return Map.of("item_id", row.getUUID("item_id"), "stock", row.getInt("stock"), "price", row.getFloat("price"));
     }
 
     public String subtract(String itemId, int amount) {
@@ -20,7 +20,7 @@ public class StockApiController {
         Map<String, String> resultMap = Map.of(
                 "item_id", row.getUUID("item_id").toString(),
                 "stock", Integer.toString(row.getInt("stock")),
-                "price", Integer.toString(row.getInt("price")));
+                "price", Float.toString(row.getFloat("price")));
         return resultMap.toString();
     }
 
@@ -31,11 +31,11 @@ public class StockApiController {
         Map<String, String> resultMap = Map.of(
                 "item_id", row.getUUID("item_id").toString(),
                 "stock", Integer.toString(row.getInt("stock")),
-                "price", Integer.toString(row.getInt("price")));
+                "price",Float.toString(row.getFloat("price")));
         return resultMap.toString();
     }
 
-    public Map<String, Object> createItem(int price) {
+    public Map<String, Object> createItem(float price) {
         UUID itemID=stock_service.CreateItem(price);
         Map<String, Object> res = Map.of("item_id", itemID,"price:",price,"stock:",0);
         return res;

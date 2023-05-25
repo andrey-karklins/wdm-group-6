@@ -23,7 +23,7 @@ public class PaymentApiController {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public String pay(String userId, String orderId, int amount) {
+    public String pay(String userId, String orderId, float amount) {
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
 
@@ -44,7 +44,7 @@ public class PaymentApiController {
             }
 
             //Should the endpoint use the cost in the order instance or the amount provided by the endpoint?
-            int cost = responseJSON.get("total_cost").asInt();
+            float cost = (float) responseJSON.get("total_cost").asDouble();
 
             if (cost != amount) {
                 return "Wrong Amount to pay for the order.";
@@ -82,7 +82,7 @@ public class PaymentApiController {
                 return "The order has not been paid yet";
             }
 
-            int cost = responseJSON.get("total_cost").asInt();
+            float cost = (float) responseJSON.get("total_cost").asDouble();
             PaymentService.addFunds(UUID.fromString(userId), cost);
             PaymentService.sendEvent("OrderCanceled", responseJSON.toString());
 
@@ -114,7 +114,7 @@ public class PaymentApiController {
         return res;
     }
 
-    public Map<String, Object> addFunds(String userId, int amount) {
+    public Map<String, Object> addFunds(String userId, float amount) {
         Map<String, Object> res = new HashMap<>(Map.of("paid", true));
         boolean success = PaymentService.addFunds(UUID.fromString(userId), amount);
         res.put("paid", success);

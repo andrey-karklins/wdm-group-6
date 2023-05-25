@@ -36,7 +36,7 @@ public class OrderService {
     private static String keyspace = "order_keyspace";
 
     private final String stockUrl = "http://stock-service:5000";
-    static ConcurrentHashMap<String, Integer> priceMap = new ConcurrentHashMap<>();
+    static ConcurrentHashMap<String, Float> priceMap = new ConcurrentHashMap<>();
 
     static Mapper<Order> orderMapper;
 
@@ -79,7 +79,7 @@ public class OrderService {
                 + "paid boolean,"
                 + "items list<uuid>,"
                 + "user_id uuid,"
-                + "total_cost int);";
+                + "total_cost float);";
         session.execute(query);
     }
 
@@ -90,7 +90,7 @@ public class OrderService {
 
     public UUID createOrder(UUID userId) {
         UUID orderId = UUID.randomUUID();
-        Order order = new Order(orderId, userId, false, 0, new ArrayList<UUID>());
+        Order order = new Order(orderId, userId, false, 0.0f, new ArrayList<UUID>());
         order.order_id = orderId;
         orderMapper.save(order);
         return orderId;
@@ -110,8 +110,8 @@ public class OrderService {
         JsonNode item = requestItem(itemId);
 
         assert item != null;
-        int itemPrice = item.get("price").asInt();
-        int itemStock = item.get("stock").asInt();
+        float itemPrice = (float) item.get("price").asDouble();
+        float itemStock = (float) item.get("stock").asDouble();
 
         if(itemStock < 1) {
             return false;
@@ -136,7 +136,7 @@ public class OrderService {
     //TODO Retrieve the price from the stock microservice
     public boolean removeItemFromOrder(UUID orderId, UUID itemId) {
 //        int itemPrice = 1;//dummy
-        int itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
+        float itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
         Order order =  findOrderById(orderId);
         if (order == null) {
             return false;
