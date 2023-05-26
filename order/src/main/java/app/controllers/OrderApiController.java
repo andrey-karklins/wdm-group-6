@@ -2,7 +2,9 @@ package app.controllers;
 
 import app.services.OrderService;
 import app.models.Order;
-
+import com.fasterxml.jackson.databind.ObjectMapper; // import jackson library
+import java.util.Map;
+import java.util.HashMap;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -72,6 +74,18 @@ public class OrderApiController {
     //TODO Call the payments microservice order to pay and the stock microservice to decrement the stock nr
     public String checkout(String orderId) {
         UUID orderIdUUID = UUID.fromString(orderId);
+        Order resultOrder = OrderService.findOrderById(UUID.fromString(orderId));
+        Map<String, Object> data = new HashMap<>();
+        data.put("UserID", resultOrder.user_id);
+        data.put("OrderID", resultOrder.order_id);
+        data.put("Items", resultOrder.items);
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String data_json = objectMapper.writeValueAsString(data);
+            OrderService.sendEvent("OrderCheckout",data_json);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         boolean result = OrderService.changePaidStatus(orderIdUUID);
         return result ? "Success" : "Failure";
     }

@@ -1,6 +1,7 @@
 package app.services;
 
 import app.StockApp;
+import app.StockError;
 import com.datastax.driver.core.*;
 import com.datastax.driver.mapping.MappingManager;
 
@@ -100,6 +101,9 @@ public class StockService {
     public Row SubStock(UUID itemID,int amount){
         Row row = findItemByID(itemID);
         int original_stock = row.getInt("stock");
+        if (original_stock<amount){
+            throw new StockError("stock not enough");
+        }
         int new_stock = original_stock-amount;
         String query = "UPDATE items SET stock = ? WHERE item_id = ?";
         PreparedStatement preparedStatement = session.prepare(query);

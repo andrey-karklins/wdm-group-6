@@ -1,10 +1,13 @@
 package app.services;
-import java.util.Objects;
-import java.util.UUID;
+import app.StockError;
+import java.util.*;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 
 import com.datastax.driver.core.*;
 import java.util.concurrent.TimeUnit;
@@ -39,8 +42,9 @@ public class OrderEventsService {
                 break;
             case "OrderFailed":
                 break;
-            case "PaymentSucceedToStock":
-                HandlerPaymentSucceed(data);
+            case "OrderCheckout":
+                System.out.println(data);
+                HandlerOrderCheckout(data);
                 break;
             default:
                 System.out.println("Unknown event: " + event);
@@ -88,34 +92,60 @@ public class OrderEventsService {
         StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+ item_price);
 
     }
-//    private static void HandlerOrderFailed(String data)
-//    {
-//        if (Objects.equals(data, ""))
-//            return;
-//
-//        String[] uuidStrings = data.split(" ");
-//        UUID[] uuids = new UUID[uuidStrings.length];
-//        StockService stockservice = new StockService();
-//        for (int i = 0; i < uuidStrings.length; i++) {
-//            System.out.println(uuidStrings[i]);
-//            uuids[i] = UUID.fromString(uuidStrings[i]);
-//            //Row subtract = stockservice.AddStock(uuids[i],1);
-//        }
-//    }
-    private static void HandlerPaymentSucceed(String data)
+    private static void HandlerOrderCheckout(String data)
     {
-        if (Objects.equals(data, ""))
-            return;
-
-        String[] uuidStrings = data.split(" ");
-        UUID[] uuids = new UUID[uuidStrings.length];
-        StockService stockservice = new StockService();
-        System.out.println(data);
-
-        for (int i = 0; i < uuidStrings.length; i++) {
-            System.out.println(uuidStrings[i]);
-            uuids[i] = UUID.fromString(uuidStrings[i]);
-            Row subtract = stockservice.SubStock(uuids[i],1);
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> map = new HashMap<>();
+        try {
+            map = objectMapper.readValue(data, Map.class);
+        }catch (IOException e) {
+            e.printStackTrace();
         }
+        String userID = (String) map.get("UserID");
+        List<String> items = (List<String>) map.get("Items");
+        String orderID = (String) map.get("OrderID");
+        System.out.println("UserID: " + userID);
+        System.out.println("Items: " + items);
+        System.out.println("OrderID: " + orderID);
+        float total_price = 0.0f;
+        StockService stockservice = new StockService();
+        List<UUID> items_uuid = new ArrayList<>();;
+        for (int i = 0; i < items.size(); i++) {
+            String item = items.get(i);
+            UUID item_uuid = UUID.fromString(item);
+            items_uuid.add(item_uuid);
+            Row result = stockservice.findItemByID(item_uuid);
+            try{
+                Row subtract = stockservice.SubStock(item_uuid,1);
+            }catch (StockError e){
+                System.err.println("Caught a StockError: " + e.getMessage());
+                Map<String, Object> ordermap = new HashMap<>();
+                ordermap.put("OrderID",UUID.fromString(orderID));
+                ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
+                String data_json_fail="";
+                try {
+                    data_json_fail = objectMapper_to_user_fail.writeValueAsString(ordermap);
+                }catch(Exception e1) {
+                    e.printStackTrace();
+                }
+                System.out.println("sendEvent StockSubtractFailed"+data_json_fail);
+                StockService.sendEvent("StockSubtractFailed",data_json_fail);
+                throw new IllegalStateException("Stock subtraction failed, aborting.");
+            }
+            total_price+=result.getFloat("price");
+        }
+        Map<String, Object> data_to_payment = new HashMap<>();
+        data_to_payment.put("UserID", UUID.fromString(userID));
+        data_to_payment.put("OrderID", UUID.fromString(orderID));
+        data_to_payment.put("Items", items_uuid);
+        data_to_payment.put("TotalCost", total_price);
+        ObjectMapper objectMapper_to_payment = new ObjectMapper();
+        String data_json="";
+        try {
+            data_json = objectMapper_to_payment.writeValueAsString(data_to_payment);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        StockService.sendEvent("StockSubtracted",data_json);
     }
 }

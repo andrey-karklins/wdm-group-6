@@ -36,16 +36,6 @@ public class PaymentEventsService {
                 break;
             case "PaymentSucceeded":
                 OrderService.changePaidStatus(UUID.fromString(data));
-                Order resultOrder = OrderService.findOrderById(UUID.fromString(data));
-                String items = "";
-                for (int i = 0; i < resultOrder.items.size(); i++) {
-                    items += resultOrder.items.get(i).toString();
-                    if(i!=resultOrder.items.size()-1)
-                    {
-                        items+=" ";
-                    }
-                }
-                OrderService.sendEvent("PaymentSucceedToStock",items);
                 break;
 
             case "ifItemExists":
