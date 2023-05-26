@@ -38,7 +38,9 @@ public class OrderEventsService {
                 HandlerRemoveItem(data);
                 break;
             case "OrderFailed":
-                HandlerOrderFailed(data);
+                break;
+            case "PaymentSucceedToStock":
+                HandlerPaymentSucceed(data);
                 break;
             default:
                 System.out.println("Unknown event: " + event);
@@ -52,22 +54,18 @@ public class OrderEventsService {
         UUID itemid=UUID.fromString(itemId);
         StockService stockervice = new StockService();
         Row result = stockervice.findItemByID(itemid);
-        int item_price=0;
+        float item_price=0.0f;
         //cant find the item
         if( result ==  null)
             item_price=-2;
-        //the item stock is zero
-        if (result!=null && result.getInt("stock")==0)
-            item_price=-1;
         //there is enough stock of the item
-        if (result!=null && result.getInt("stock")>=1){
-            item_price = result.getInt("price");
-            Row sub = stockervice.SubStock(itemid,1);
+        if (result!=null){
+            item_price = result.getFloat("price");
+            //Row sub = stockervice.SubStock(itemid,1);
         }
 //        System.out.println(item_price);
-        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(item_price));
+        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+ item_price);
     }
-
 
     private static void HandlerRemoveItem(String data){
         String[] part = data.split(" ");
@@ -76,21 +74,35 @@ public class OrderEventsService {
         UUID itemid=UUID.fromString(itemId);
         StockService stockservice = new StockService();
         Row result = stockservice.findItemByID(itemid);
-        int item_price=0;
+        float item_price = 0;
         //cant find the item
         if( result ==  null)
             item_price = -2;
 
         //there is enough stock of the item
         if (result!=null){
-            item_price = result.getInt("price");
-            Row subtract = stockservice.AddStock(itemid,1);
+            item_price = result.getFloat("price");
+            //Row subtract = stockservice.AddStock(itemid,1);
         }
 //        System.out.println(item_price);
-        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+Integer.toString(item_price));
+        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+ item_price);
 
     }
-    private static void HandlerOrderFailed(String data)
+//    private static void HandlerOrderFailed(String data)
+//    {
+//        if (Objects.equals(data, ""))
+//            return;
+//
+//        String[] uuidStrings = data.split(" ");
+//        UUID[] uuids = new UUID[uuidStrings.length];
+//        StockService stockservice = new StockService();
+//        for (int i = 0; i < uuidStrings.length; i++) {
+//            System.out.println(uuidStrings[i]);
+//            uuids[i] = UUID.fromString(uuidStrings[i]);
+//            //Row subtract = stockservice.AddStock(uuids[i],1);
+//        }
+//    }
+    private static void HandlerPaymentSucceed(String data)
     {
         if (Objects.equals(data, ""))
             return;
@@ -103,7 +115,7 @@ public class OrderEventsService {
         for (int i = 0; i < uuidStrings.length; i++) {
             System.out.println(uuidStrings[i]);
             uuids[i] = UUID.fromString(uuidStrings[i]);
-            Row subtract = stockservice.AddStock(uuids[i],1);
+            Row subtract = stockservice.SubStock(uuids[i],1);
         }
     }
 }

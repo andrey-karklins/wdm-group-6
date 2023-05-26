@@ -15,7 +15,7 @@ public class Order {
 
     public boolean paid = false;
 
-    public int total_cost = 0;
+    public float total_cost = 0.0f;
 
     public List<UUID> items;
 
@@ -23,7 +23,7 @@ public class Order {
 
     }
 
-    public Order(UUID orderId, UUID userId, boolean paid, int totalCost, List<UUID> items) {
+    public Order(UUID orderId, UUID userId, boolean paid, float totalCost, List<UUID> items) {
         this.order_id = orderId;
         this.user_id = userId;
         this.paid = paid;

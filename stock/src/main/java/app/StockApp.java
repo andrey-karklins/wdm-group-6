@@ -21,7 +21,7 @@ public class StockApp {
             get("find/{item_id}", ctx -> ctx.json(api.find(ctx.pathParam("item_id"))));
             post("subtract/{item_id}/{amount}", ctx -> ctx.json(api.subtract(ctx.pathParam("item_id"), Integer.parseInt(ctx.pathParam("amount")))));
             post("add/{item_id}/{amount}", ctx -> ctx.json(api.add(ctx.pathParam("item_id"), Integer.parseInt(ctx.pathParam("amount")))));
-            post("item/create/{price}", ctx -> ctx.json(api.createItem(Integer.parseInt(ctx.pathParam("price")))));
+            post("item/create/{price}", ctx -> ctx.json(api.createItem(Float.parseFloat(ctx.pathParam("price")))));
         });
         app.sse("/sse", (client) -> {
             client.sendEvent("connected", "stock-service");
