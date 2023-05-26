@@ -29,11 +29,14 @@ public class StockEventsService {
             // Below events to be handled
             // ... (TODO)
             case "ItemStock":
-                System.out.println("ItemStock: " + data);
+//                System.out.println("ItemStock: " + data);
                 String orderId = data.split(" ")[0];
                 String itemId = data.split(" ")[1];
                 float price = Float.parseFloat(data.split(" ")[2]);
                 OrderService.priceMap.put(orderId + " " + itemId, price);
+                break;
+            case "StockSubtractedFailed":
+                System.out.println("StockSubtractedFailed: " + data);
                 break;
             default:
                 System.out.println("Unknown event: " + event);

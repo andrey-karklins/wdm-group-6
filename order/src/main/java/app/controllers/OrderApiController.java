@@ -29,8 +29,8 @@ public class OrderApiController {
                 items+=" ";
             }
         }
-        OrderService.sendEvent("OrderCanceled", orderId);
-        OrderService.sendEvent("OrderFailed", items);
+//        OrderService.sendEvent("OrderCanceled", orderId);
+//        OrderService.sendEvent("OrderFailed", items);
         UUID orderIdUUID = UUID.fromString(orderId);
         boolean result = OrderService.cancelOrder(orderIdUUID);
         return result ? "Success" : "Failure";
@@ -64,7 +64,6 @@ public class OrderApiController {
     }
 
     public String removeItem(String orderId, String itemId) {
-        OrderService.sendEvent("ItemRemoval", orderId + " " + itemId);
         UUID orderIdUUID = UUID.fromString(orderId);
         UUID itemIdUUID = UUID.fromString(itemId);
         boolean result = orderService.removeItemFromOrder(orderIdUUID, itemIdUUID);

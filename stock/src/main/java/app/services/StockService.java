@@ -33,7 +33,7 @@ public class StockService {
                 + "stock int,"
                 + "price float);";
         session.execute(query);
-        query = "INSERT INTO items (item_id, stock, price) VALUES (9552eace-06a7-4a5e-a90d-9200063ed94a,100,6)";
+        query = "INSERT INTO items (item_id, stock, price) VALUES (9552eace-06a7-4a5e-a90d-9200063ed94a,5,6)";
         session.execute(query);
 
     }
