@@ -1,5 +1,6 @@
 package app.services;
 
+import app.models.Order;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
@@ -35,6 +36,16 @@ public class PaymentEventsService {
                 break;
             case "PaymentSucceeded":
                 OrderService.changePaidStatus(UUID.fromString(data));
+                Order resultOrder = OrderService.findOrderById(UUID.fromString(data));
+                String items = "";
+                for (int i = 0; i < resultOrder.items.size(); i++) {
+                    items += resultOrder.items.get(i).toString();
+                    if(i!=resultOrder.items.size()-1)
+                    {
+                        items+=" ";
+                    }
+                }
+                OrderService.sendEvent("PaymentSucceedToStock",items);
                 break;
 
             case "ifItemExists":
