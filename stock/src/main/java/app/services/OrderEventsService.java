@@ -156,43 +156,17 @@ public class OrderEventsService {
         }
         StockService.sendEvent("StockSubtracted",data_json);
     }
-    //if there are enough stock
-//        for (int i = 0; i < items.size(); i++) {
-//            String item = items.get(i);
-//            UUID item_uuid = UUID.fromString(item);
-//            items_uuid.add(item_uuid);
-//            Row result = stockservice.findItemByID(item_uuid);
-//            try{
-//                Row subtract = stockservice.SubStock(item_uuid,1);
-//            }catch (StockError e){
-//                System.err.println("Caught a StockError: " + e.getMessage());
-//                Map<String, Object> ordermap = new HashMap<>();
-//                ordermap.put("OrderID",UUID.fromString(orderID));
-//                ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
-//                String data_json_fail="";
-//                try {
-//                    data_json_fail = objectMapper_to_user_fail.writeValueAsString(ordermap);
-//                }catch(Exception e1) {
-//                    e1.printStackTrace();
-//                }
-//                System.out.println("sendEvent StockSubtract Failed"+data_json_fail);
-//                StockService.sendEvent("StockSubtractFailed",data_json_fail);
-//                throw new IllegalStateException("Stock subtraction failed, aborting.");
-//            }
-//            total_price+=result.getFloat("price");
-//        }
-//        Map<String, Object> data_to_payment = new HashMap<>();
-//        data_to_payment.put("UserID", UUID.fromString(userID));
-//        data_to_payment.put("OrderID", UUID.fromString(orderID));
-//        data_to_payment.put("Items", items_uuid);
-//        data_to_payment.put("TotalCost", total_price);
-//        ObjectMapper objectMapper_to_payment = new ObjectMapper();
-//        String data_json="";
-//        try {
-//            data_json = objectMapper_to_payment.writeValueAsString(data_to_payment);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        StockService.sendEvent("StockSubtracted",data_json);
+    private static void HandlerOrderCancelled(String data)
+    {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<Object, Object> data_map = new HashMap<>();
+        try {
+            data_map = objectMapper.readValue(data, Map.class);
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+        List<String> items = (List<String>) data_map.get("Items");
+        String orderID = (String) data_map.get("OrderID");
+    }
 }
 
