@@ -116,17 +116,19 @@ public class OrderEventsService {
 //            System.out.println("Key: " + item_uuid + ", Value: " + amount);
             Row result = stockservice.findItemByID(item_uuid);
             if(result.getInt("stock")<amount){
-                Map<String, Object> ordermap = new HashMap<>();
-                ordermap.put("OrderID",UUID.fromString(orderID));
+                //NOT enough stock for each item in the order
+                Map<String, Object> failmap = new HashMap<>();
+                failmap.put("OrderID",UUID.fromString(orderID));
+                failmap.put("Items",items_uuid);
                 ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
                 String data_json_fail="";
                 try {
-                    data_json_fail = objectMapper_to_user_fail.writeValueAsString(ordermap);
+                    data_json_fail = objectMapper_to_user_fail.writeValueAsString(failmap);
                 }catch(Exception e1) {
                     e1.printStackTrace();
                 }
                 System.out.println("sendEvent StockSubtract Failed"+data_json_fail);
-                StockService.sendEvent("StockSubtractFailed",data_json_fail);
+                StockService.sendEvent("FundsSubtractFailed",data_json_fail);
                 throw new IllegalStateException("Stock subtraction failed, aborting.");
             }
         }
