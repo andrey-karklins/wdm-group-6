@@ -32,8 +32,8 @@ public class PaymentEventsService {
                 break;
             // Below events to be handled
             // ... (TODO)
-            case "OrderPaidFailed":
-                HandlerOrderPaidFailed(data);
+            case "FundsSubtractFailed":
+                HandlerFundsSubtractFailed(data);
                 break;
             case "ReturnFundsFailed":
                 HandlerReturnFundsFailed(data);
@@ -42,7 +42,7 @@ public class PaymentEventsService {
                 System.out.println("Unknown event: " + event);
         }
     }
-    private static void HandlerOrderPaidFailed(String data)
+    private static void HandlerFundsSubtractFailed(String data)
     {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<Object, Object> data_map = new HashMap<>();
@@ -70,7 +70,7 @@ public class PaymentEventsService {
         }catch(Exception e1) {
             e1.printStackTrace();
         }
-        StockService.sendEvent("FundsSubtractFailed",data_json_fail);
+        StockService.sendEvent("StockSubtractFailed",data_json_fail);
     }
     private static void HandlerReturnFundsFailed(String data)
     {
