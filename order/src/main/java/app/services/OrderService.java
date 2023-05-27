@@ -205,4 +205,16 @@ public class OrderService {
         @Query("SELECT * FROM orders WHERE order_id = :order_id")
         Order getOrderById(@Param("order_id") UUID order_id);
     }
+
+
+
+    public static void updateOrder(UUID orderId, UUID userId, float totalCost) {
+        Order order = findOrderById(orderId);
+        if (order != null && order.user_id.equals(userId)) {
+            order.total_cost = totalCost;
+            order.paid = true;
+            orderMapper.save(order);
+        }
+    }
+
 }

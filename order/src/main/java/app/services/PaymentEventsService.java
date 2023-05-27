@@ -1,11 +1,14 @@
 package app.services;
 
 import app.models.Order;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +44,21 @@ public class PaymentEventsService {
             case "ifItemExists":
                 System.out.println("payment received it too");
                 break;
+
+            case "FundsSubtracted":
+                ObjectMapper objectMapper = new ObjectMapper();
+                try {
+                    JsonNode jsonNode = objectMapper.readTree(data);
+                    UUID userId = UUID.fromString(jsonNode.get("UserID").asText());
+                    UUID orderId = UUID.fromString(jsonNode.get("OrderID").asText());
+                    float totalCost = (float) jsonNode.get("TotalCost").asDouble();
+                    OrderService.updateOrder(orderId, userId, totalCost);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+
+
             default:
                 System.out.println("Unknown event: " + event);
         }
