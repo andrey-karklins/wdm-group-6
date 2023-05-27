@@ -36,6 +36,9 @@ public class OrderEventsService {
 //                System.out.println(data);
                 HandlerOrderCheckout(data);
                 break;
+            case "OrderCancelled":
+                HandlerOrderCancelled(data);
+                break;
             default:
                 System.out.println("Unknown event: " + event);
         }
@@ -167,6 +170,27 @@ public class OrderEventsService {
         }
         List<String> items = (List<String>) data_map.get("Items");
         String orderID = (String) data_map.get("OrderID");
+        String userID = (String) data_map.get("UserID");
+        Integer cost = (Integer) data_map.get("TotalCost");
+        List<UUID> items_uuid = new ArrayList<>();
+        StockService stockService=new StockService();
+        for(String s:items){
+            items_uuid.add(UUID.fromString(s));
+            Row res = stockService.AddStock(UUID.fromString(s),1);
+        }
+        Map<String, Object> data_to_payment = new HashMap<>();
+        data_to_payment.put("UserID", UUID.fromString(userID));
+        data_to_payment.put("OrderID", UUID.fromString(orderID));
+        data_to_payment.put("Items", items_uuid);
+        data_to_payment.put("TotalCost", cost);
+        ObjectMapper objectMapper_to_payment = new ObjectMapper();
+        String data_json="";
+        try {
+            data_json = objectMapper_to_payment.writeValueAsString(data_to_payment);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        StockService.sendEvent("StockReturned",data_json);
     }
 }
 

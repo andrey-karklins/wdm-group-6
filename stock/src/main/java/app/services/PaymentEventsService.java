@@ -35,6 +35,9 @@ public class PaymentEventsService {
             case "OrderPaidFailed":
                 HandlerOrderPaidFailed(data);
                 break;
+            case "ReturnFundsFailed":
+                HandlerReturnFundsFailed(data);
+                break;
             default:
                 System.out.println("Unknown event: " + event);
         }
@@ -68,6 +71,35 @@ public class PaymentEventsService {
             e1.printStackTrace();
         }
         StockService.sendEvent("FundsSubtractFailed",data_json_fail);
-
+    }
+    private static void HandlerReturnFundsFailed(String data)
+    {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<Object, Object> data_map = new HashMap<>();
+        try {
+            data_map = objectMapper.readValue(data, Map.class);
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+        List<String> items = (List<String>) data_map.get("Items");
+        String orderID = (String) data_map.get("OrderID");
+        StockService stockservice = new StockService();
+        List<UUID> items_uuid = new ArrayList<>();;
+        for (String s:items){
+            items_uuid.add(UUID.fromString(s));
+            Row result = stockservice.SubStock(UUID.fromString(s),1);
+        }
+        //send failed event to OrderService
+        Map<String, Object> failmap = new HashMap<>();
+        failmap.put("OrderID",UUID.fromString(orderID));
+//        failmap.put("Items",items_uuid);
+        ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
+        String data_json_fail="";
+        try {
+            data_json_fail = objectMapper_to_user_fail.writeValueAsString(failmap);
+        }catch(Exception e1) {
+            e1.printStackTrace();
+        }
+        StockService.sendEvent("StockReturnFailed",data_json_fail);
     }
 }
