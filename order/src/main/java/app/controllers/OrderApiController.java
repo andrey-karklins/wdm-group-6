@@ -75,11 +75,11 @@ public class OrderApiController {
         return result ? "Success" : "Failure";
     }
 
-    public static void handleFailedTransaction(UUID orderId, String errorMsg) {
-        // Update the order status to Failure
-        orderStatusMap.put(orderId, "Failure");
-        System.out.println("Transaction for order " + orderId + " failed: " + errorMsg);
-    }
+//    public static void handleFailedTransaction(UUID orderId, String errorMsg) {
+//        // Update the order status to Failure
+//        orderStatusMap.put(orderId, "Failure");
+//        System.out.println("Transaction for order " + orderId + " failed: " + errorMsg);
+//    }
 
     //TODO Call the payments microservice order to pay and the stock microservice to decrement the stock nr
     //Check if it is unpaid
