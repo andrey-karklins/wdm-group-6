@@ -14,6 +14,7 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -25,7 +26,7 @@ public class PaymentApiController {
 
     private final String orderUrl = "http://order-service:5000";
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static final ConcurrentHashMap<UUID, CompletableFuture<String>> transactionMap = new ConcurrentHashMap<>();
     public String pay(String userId, String orderId, float amount) {
@@ -83,6 +84,26 @@ public class PaymentApiController {
         return future.get();
 
     }
+
+
+    public static void returnFunds(UUID userID, UUID orderID, UUID transactionID, float totalCost, List<UUID> items) throws JsonProcessingException {
+        try {
+            PaymentService.addFunds(userID, totalCost);
+            transactionMap.get(transactionID).complete("Success");
+        }
+        catch (Exception e) {
+            String err = "Adding funds back failed due to " + e;
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("UserID", userID);
+            eventData.put("OrderID", orderID);
+            eventData.put("TransactionID", transactionID);
+            eventData.put("ErrorMsg", err);
+            eventData.put("Items", items);
+            PaymentService.sendEvent("ReturnFundsFailed", mapper.writeValueAsString(eventData));
+        }
+
+    }
+
 
     public Map<String, Object> status(String userId, String orderId) {
         Map<String, Object> res = new HashMap<>(Map.of("status", true));

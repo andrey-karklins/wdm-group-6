@@ -9,6 +9,8 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +42,18 @@ public class StockEventsService {
                 try {
                     JsonNode responseJSON = mapper.readTree(data);
                     UUID transactionID = UUID.fromString(responseJSON.get("TransactionID").asText());
-                    PaymentApiController.transactionMap.get(transactionID).complete("Success");
+                    UUID userID = UUID.fromString(responseJSON.get("UserID").asText());
+                    UUID orderID = UUID.fromString(responseJSON.get("OrderID").asText());
+                    JsonNode itemsNode = responseJSON.get("Items");
+                    List<UUID> items = new ArrayList<>();
+                    for (JsonNode itemNode : itemsNode) {
+                        UUID item = UUID.fromString(itemNode.asText());
+                        items.add(item);
+                    }
+                    float totalCost = (float) responseJSON.get("TotalCost").asDouble();
+
+                    PaymentApiController.returnFunds(userID, orderID, transactionID, totalCost, items);
+
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
