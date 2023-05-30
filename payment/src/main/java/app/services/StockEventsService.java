@@ -1,10 +1,12 @@
 package app.services;
 
+import app.controllers.PaymentApiController;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class StockEventsService {
@@ -29,6 +31,11 @@ public class StockEventsService {
             // Below events to be handled
             // ... (TODO)
             case "ItemStock":
+                break;
+            case "StockReturned":
+                //TODO: Parse JSON, uuid in JSON transaction id
+                // Call map
+                PaymentApiController.transactionMap.get(UUID.randomUUID()).complete("Error");
                 break;
             default:
                 System.out.println("Unknown event: " + event);

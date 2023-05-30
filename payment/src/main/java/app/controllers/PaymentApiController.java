@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 
 public class PaymentApiController {
@@ -23,6 +26,7 @@ public class PaymentApiController {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+    public static final ConcurrentHashMap<UUID, CompletableFuture<String>> transactionMap = new ConcurrentHashMap<>();
     public String pay(String userId, String orderId, float amount) {
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
@@ -64,12 +68,13 @@ public class PaymentApiController {
         return "Payment failed";
     }
 
-    public String cancel(String userId, String orderId) {
+    public String cancel(String userId, String orderId) throws ExecutionException, InterruptedException {
+//            HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
+//            String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
 
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
-            HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
-            String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
-
+            UUID uuid = UUID.randomUUID();
+            CompletableFuture<String> future = new CompletableFuture<>();
+            transactionMap.put(uuid, future);
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
             boolean orderStatus =  responseJSON.get("paid").asBoolean();
@@ -86,11 +91,7 @@ public class PaymentApiController {
             PaymentService.addFunds(UUID.fromString(userId), cost);
             PaymentService.sendEvent("OrderCanceled", responseJSON.toString());
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return "Success";
+        return future.get();
 
     }
 
