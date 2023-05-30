@@ -6,11 +6,16 @@ import com.fasterxml.jackson.databind.ObjectMapper; // import jackson library
 import java.util.Map;
 import java.util.HashMap;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 
 public class OrderApiController {
     private static final OrderService orderService = new OrderService();
+    public static final ConcurrentHashMap<UUID, CompletableFuture<String>> checkoutTransactionMap = new ConcurrentHashMap<>();
+
 
     public Map<String, String> createOrder(String userId) {
         UUID userIdUUID = UUID.fromString(userId);
@@ -70,10 +75,21 @@ public class OrderApiController {
         return result ? "Success" : "Failure";
     }
 
+    public static void handleFailedTransaction(UUID orderId, String errorMsg) {
+        // Update the order status to Failure
+        orderStatusMap.put(orderId, "Failure");
+        System.out.println("Transaction for order " + orderId + " failed: " + errorMsg);
+    }
+
     //TODO Call the payments microservice order to pay and the stock microservice to decrement the stock nr
-    public String checkout(String orderId) {
+    //Check if it is unpaid
+    public String checkout(String orderId) throws ExecutionException, InterruptedException {
         UUID orderIdUUID = UUID.fromString(orderId);
         Order resultOrder = OrderService.findOrderById(UUID.fromString(orderId));
+        //Check if it is unpaid
+        UUID transactionId = UUID.randomUUID();
+        CompletableFuture<String> future = new CompletableFuture<>();
+        checkoutTransactionMap.put(transactionId, future);
         Map<String, Object> data = new HashMap<>();
         data.put("UserID", resultOrder.user_id);
         data.put("OrderID", resultOrder.order_id);
@@ -82,6 +98,37 @@ public class OrderApiController {
         try {
             String data_json = objectMapper.writeValueAsString(data);
             OrderService.sendEvent("OrderCheckout",data_json);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //todo: edge case: it was already paid by other transaction
+        boolean result = OrderService.changePaidStatus(orderIdUUID);
+        return future.get(); //result ? "Success" : "Failure";
+    }
+
+    public String cancelPayment(String orderId) {
+        UUID orderIdUUID = UUID.fromString(orderId);
+        Order resultOrder = OrderService.findOrderById(UUID.fromString(orderId));
+        Map<String, Object> data = new HashMap<>();
+        data.put("UserID", resultOrder.user_id);
+        data.put("OrderID", resultOrder.order_id);
+        data.put("Items", resultOrder.items);
+        data.put("TotalCost", resultOrder.total_cost);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        if (!resultOrder.paid) {
+            try {
+                String data_json = objectMapper.writeValueAsString(data);
+                OrderService.sendEvent("CancelPaymentFailed",data_json);
+                return "Failure";
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            String data_json = objectMapper.writeValueAsString(data);
+            OrderService.sendEvent("OrderCancelled",data_json);
         } catch (Exception e) {
             e.printStackTrace();
         }

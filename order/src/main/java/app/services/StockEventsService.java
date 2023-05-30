@@ -1,10 +1,15 @@
 package app.services;
 
+import app.controllers.OrderApiController;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
+import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class StockEventsService {
@@ -35,8 +40,20 @@ public class StockEventsService {
                 float price = Float.parseFloat(data.split(" ")[2]);
                 OrderService.priceMap.put(orderId + " " + itemId, price);
                 break;
+//            case "StockSubtractedFailed":
+//                System.out.println("StockSubtractedFailed: " + data);
+//                break;
             case "StockSubtractedFailed":
-                System.out.println("StockSubtractedFailed: " + data);
+                ObjectMapper objectMapper = new ObjectMapper();
+                try {
+                    JsonNode jsonNode = objectMapper.readTree(data);
+                    UUID failedOrderId = UUID.fromString(jsonNode.get("orderID").asText());
+                    UUID transactionId = UUID.fromString(jsonNode.get("transactionID").asText());
+                    String errorMsg = jsonNode.get("errorMsg").asText();
+                    OrderApiController.checkoutTransactionMap.get(transactionId).complete(errorMsg);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 break;
             default:
                 System.out.println("Unknown event: " + event);
