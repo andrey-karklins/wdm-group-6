@@ -3,6 +3,7 @@ package app.controllers;
 import app.PaymentError;
 import app.models.User;
 import app.services.PaymentService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpException;
@@ -68,28 +69,16 @@ public class PaymentApiController {
         return "Payment failed";
     }
 
-    public String cancel(String userId, String orderId) throws ExecutionException, InterruptedException {
-//            HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
-//            String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
+    public String cancel(String userId, String orderId) throws ExecutionException, InterruptedException, JsonProcessingException {
 
-            UUID uuid = UUID.randomUUID();
+            UUID transactionID = UUID.randomUUID();
             CompletableFuture<String> future = new CompletableFuture<>();
-            transactionMap.put(uuid, future);
-            JsonNode responseJSON = mapper.readTree(response);
-            String receivedUserId = responseJSON.get("user_id").asText();
-            boolean orderStatus =  responseJSON.get("paid").asBoolean();
-
-            if (!receivedUserId.equals(userId)) {
-                return "userID does not correspond to the one in orderID";
-            }
-
-            if (!orderStatus) {
-                return "The order has not been paid yet";
-            }
-
-            float cost = (float) responseJSON.get("total_cost").asDouble();
-            PaymentService.addFunds(UUID.fromString(userId), cost);
-            PaymentService.sendEvent("OrderCanceled", responseJSON.toString());
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("UserID", userId);
+            eventData.put("OrderID", orderId);
+            eventData.put("TransactionID", transactionID);
+            transactionMap.put(transactionID, future);
+            PaymentService.sendEvent("CancelPayment", mapper.writeValueAsString(eventData));
 
         return future.get();
 
