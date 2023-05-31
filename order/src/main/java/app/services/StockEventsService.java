@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static app.services.OrderService.changePaidStatus;
+import static app.services.OrderService.sendEvent;
+
 public class StockEventsService {
     private static boolean connected = false;
     public static void listen() throws InterruptedException {
@@ -56,6 +59,20 @@ public class StockEventsService {
                     e.printStackTrace();
                 }
                 break;
+
+            case "StockReturnFailed":
+                ObjectMapper objectMapper2 = new ObjectMapper();
+                try {
+                    System.out.println(data);
+                    JsonNode jsonNode = objectMapper2.readTree(data);
+                    UUID failedOrderId = UUID.fromString(jsonNode.get("OrderID").asText());
+                    changePaidStatus(failedOrderId);
+                    sendEvent("OrderCancelledFailed", null);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+
             default:
                 System.out.println("Unknown event: " + event);
         }
