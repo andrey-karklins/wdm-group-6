@@ -58,6 +58,17 @@ public class PaymentEventsService {
                 }
                 break;
 
+            case "CancelPayment":
+                ObjectMapper objectMapper2 = new ObjectMapper();
+                try {
+                    JsonNode jsonNode = objectMapper2.readTree(data);
+                    UUID userId = UUID.fromString(jsonNode.get("UserID").asText());
+                    UUID orderId = UUID.fromString(jsonNode.get("OrderID").asText());
+                    OrderService.cancelOrder(orderId, userId);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
 
             default:
                 System.out.println("Unknown event: " + event);

@@ -8,8 +8,7 @@ import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.datastax.driver.mapping.*;
@@ -215,6 +214,27 @@ public class OrderService {
             order.paid = true;
             orderMapper.save(order);
         }
+    }
+
+    public static void cancelOrder(UUID orderId, UUID userId) {
+        Order order = findOrderById(orderId);
+        String orderIdString = orderId.toString();
+        String userIdString = userId.toString();
+        List<UUID> items = order.items;
+        float total_cost = order.total_cost;
+        Map<String, Object> data_to_stock = new HashMap<>();
+        data_to_stock.put("OrderID", UUID.fromString(orderIdString));
+        data_to_stock.put("UserID", UUID.fromString(userIdString));
+        data_to_stock.put("Items", items);
+        data_to_stock.put("TotalCost", total_cost);
+        ObjectMapper objectMapper_to_payment = new ObjectMapper();
+        String data_json="";
+        try {
+            data_json = objectMapper_to_payment.writeValueAsString(data_to_stock);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        sendEvent("OrderCancelled",data_json);
     }
 
 }
