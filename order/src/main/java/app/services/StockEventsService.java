@@ -43,9 +43,10 @@ public class StockEventsService {
 //            case "StockSubtractedFailed":
 //                System.out.println("StockSubtractedFailed: " + data);
 //                break;
-            case "StockSubtractedFailed":
+            case "StockSubtractFailed":
                 ObjectMapper objectMapper = new ObjectMapper();
                 try {
+                    System.out.println(data);
                     JsonNode jsonNode = objectMapper.readTree(data);
                     UUID failedOrderId = UUID.fromString(jsonNode.get("OrderID").asText());
                     UUID transactionId = UUID.fromString(jsonNode.get("TransactionID").asText());

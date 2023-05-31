@@ -94,6 +94,7 @@ public class OrderApiController {
         data.put("UserID", resultOrder.user_id);
         data.put("OrderID", resultOrder.order_id);
         data.put("Items", resultOrder.items);
+        data.put("TransactionID",transactionId);
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             String data_json = objectMapper.writeValueAsString(data);

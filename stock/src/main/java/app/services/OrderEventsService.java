@@ -97,9 +97,10 @@ public class OrderEventsService {
         String userID = (String) data_map.get("UserID");
         List<String> items = (List<String>) data_map.get("Items");
         String orderID = (String) data_map.get("OrderID");
+        String transactionID = (String) data_map.get("TransactionID");
 //        System.out.println("UserID: " + userID);
 //        System.out.println("Items: " + items);
-//        System.out.println("OrderID: " + orderID);
+        System.out.println("transactionID: " + transactionID);
         float total_price = 0.0f;
         StockService stockservice = new StockService();
         List<UUID> items_uuid = new ArrayList<>();;
@@ -123,6 +124,9 @@ public class OrderEventsService {
                 Map<String, Object> failmap = new HashMap<>();
                 failmap.put("OrderID",UUID.fromString(orderID));
                 failmap.put("Items",items_uuid);
+                failmap.put("TransactionID",UUID.fromString(transactionID));
+                String errorMsg="NOT enough stock";
+                failmap.put("ErrorMsg",errorMsg);
                 ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
                 String data_json_fail="";
                 try {
@@ -131,7 +135,7 @@ public class OrderEventsService {
                     e1.printStackTrace();
                 }
                 System.out.println("sendEvent StockSubtract Failed"+data_json_fail);
-                StockService.sendEvent("FundsSubtractFailed",data_json_fail);
+                StockService.sendEvent("StockSubtractFailed",data_json_fail);
                 throw new IllegalStateException("Stock subtraction failed, aborting.");
             }
         }
@@ -150,6 +154,7 @@ public class OrderEventsService {
         data_to_payment.put("OrderID", UUID.fromString(orderID));
         data_to_payment.put("Items", items_uuid);
         data_to_payment.put("TotalCost", total_price);
+        data_to_payment.put("TransactionID", UUID.fromString(transactionID));
         ObjectMapper objectMapper_to_payment = new ObjectMapper();
         String data_json="";
         try {
@@ -172,6 +177,7 @@ public class OrderEventsService {
         String orderID = (String) data_map.get("OrderID");
         String userID = (String) data_map.get("UserID");
         Integer cost = (Integer) data_map.get("TotalCost");
+        String transactionID = (String) data_map.get("TransactionID");
         List<UUID> items_uuid = new ArrayList<>();
         StockService stockService=new StockService();
         for(String s:items){
@@ -183,6 +189,7 @@ public class OrderEventsService {
         data_to_payment.put("OrderID", UUID.fromString(orderID));
         data_to_payment.put("Items", items_uuid);
         data_to_payment.put("TotalCost", cost);
+        data_to_payment.put("TransactionID", UUID.fromString(transactionID));
         ObjectMapper objectMapper_to_payment = new ObjectMapper();
         String data_json="";
         try {
