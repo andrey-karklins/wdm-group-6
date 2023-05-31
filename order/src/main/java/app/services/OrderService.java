@@ -218,6 +218,11 @@ public class OrderService {
 
     public static void cancelOrder(UUID orderId, UUID userId) {
         Order order = findOrderById(orderId);
+        if (order.paid) {
+            sendEvent("OrderCancelledFailed", null);
+        } else {
+            changePaidStatus(orderId);
+        }
         String orderIdString = orderId.toString();
         String userIdString = userId.toString();
         List<UUID> items = order.items;
