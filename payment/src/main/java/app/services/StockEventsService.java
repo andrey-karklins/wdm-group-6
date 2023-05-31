@@ -39,7 +39,9 @@ public class StockEventsService {
             case "ItemStock":
                 break;
             case "StockReturned":
+            case "StockSubtracted":
                 try {
+
                     JsonNode responseJSON = mapper.readTree(data);
                     UUID transactionID = UUID.fromString(responseJSON.get("TransactionID").asText());
                     UUID userID = UUID.fromString(responseJSON.get("UserID").asText());
@@ -51,13 +53,18 @@ public class StockEventsService {
                         items.add(item);
                     }
                     float totalCost = (float) responseJSON.get("TotalCost").asDouble();
-
-                    PaymentApiController.returnFunds(userID, orderID, transactionID, totalCost, items);
+                    if(event.equals("StockReturned")) {
+                        PaymentApiController.returnFunds(userID, orderID, transactionID, totalCost, items);
+                    }
+                    else {
+                        PaymentApiController.subtractFunds(userID, orderID, transactionID, totalCost, items);
+                    }
 
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
                 break;
+
             default:
                 System.out.println("Unknown event: " + event);
         }
