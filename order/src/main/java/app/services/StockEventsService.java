@@ -9,6 +9,8 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -67,8 +69,20 @@ public class StockEventsService {
                     System.out.println(data);
                     JsonNode jsonNode = objectMapper2.readTree(data);
                     UUID failedOrderId = UUID.fromString(jsonNode.get("OrderID").asText());
+                    UUID transactionId = UUID.fromString(jsonNode.get("TransactionID").asText());
+                    String errorMsg = jsonNode.get("ErrorMsg").asText();
                     changePaidStatus(failedOrderId);
-                    sendEvent("OrderCancelledFailed", null);
+
+                    Map<String, Object> data_to_payment = new HashMap<>();
+                    data_to_payment.put("transactionID", transactionId);
+                    data_to_payment.put("ErrorMsg", errorMsg);
+                    String data_json="";
+                    try {
+                        data_json = objectMapper2.writeValueAsString(data_to_payment);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    sendEvent("OrderCancelledFailed", data_json);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
