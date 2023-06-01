@@ -52,8 +52,9 @@ public class StockEventsService {
                     System.out.println(data);
                     JsonNode jsonNode = objectMapper.readTree(data);
                     UUID failedOrderId = UUID.fromString(jsonNode.get("OrderID").asText());
+                    System.out.println(failedOrderId);
                     UUID transactionId = UUID.fromString(jsonNode.get("TransactionID").asText());
-                    String errorMsg = jsonNode.get("errorMsg").asText();
+                    String errorMsg = jsonNode.get("ErrorMsg").asText();
                     OrderApiController.checkoutTransactionMap.get(transactionId).complete(errorMsg);
                 } catch (IOException e) {
                     e.printStackTrace();

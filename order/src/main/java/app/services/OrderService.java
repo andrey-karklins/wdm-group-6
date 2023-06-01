@@ -112,9 +112,9 @@ public class OrderService {
         float itemPrice = (float) item.get("price").asDouble();
         float itemStock = (float) item.get("stock").asDouble();
 
-        if(itemStock < 1) {
-            return false;
-        }
+//        if(itemStock < 1) {
+//            return false;
+//        }
 
         Order order =  findOrderById(orderId);
         if (order == null) {
@@ -216,7 +216,7 @@ public class OrderService {
         }
     }
 
-    public static void cancelOrder(UUID orderId, UUID userId) {
+    public static void cancelOrder(UUID orderId, UUID userId, UUID transactionId) {
         Order order = findOrderById(orderId);
         if (order.paid) {
             sendEvent("OrderCancelledFailed", null);
@@ -225,11 +225,13 @@ public class OrderService {
         }
         String orderIdString = orderId.toString();
         String userIdString = userId.toString();
+        String transactionIdSting = transactionId.toString();
         List<UUID> items = order.items;
         float total_cost = order.total_cost;
         Map<String, Object> data_to_stock = new HashMap<>();
         data_to_stock.put("OrderID", UUID.fromString(orderIdString));
         data_to_stock.put("UserID", UUID.fromString(userIdString));
+        data_to_stock.put("transactionID", UUID.fromString(transactionIdSting));
         data_to_stock.put("Items", items);
         data_to_stock.put("TotalCost", total_cost);
         ObjectMapper objectMapper_to_payment = new ObjectMapper();

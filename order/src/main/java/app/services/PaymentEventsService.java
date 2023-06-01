@@ -64,7 +64,8 @@ public class PaymentEventsService {
                     JsonNode jsonNode = objectMapper2.readTree(data);
                     UUID userId = UUID.fromString(jsonNode.get("UserID").asText());
                     UUID orderId = UUID.fromString(jsonNode.get("OrderID").asText());
-                    OrderService.cancelOrder(orderId, userId);
+                    UUID transactionId = UUID.fromString(jsonNode.get("transactionID").asText());
+                    OrderService.cancelOrder(orderId, userId, transactionId);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
