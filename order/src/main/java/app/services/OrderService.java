@@ -107,17 +107,17 @@ public class OrderService {
     public boolean addItemToOrder(UUID orderId, UUID itemId) {
 //        int itemPrice = 1;//dummy
 
-        JsonNode item = requestItem(itemId);
-        if(item==null)
-        {
-            System.out.println("cant find such item in stock");
-            return false;
-        }
+//        JsonNode item = requestItem(itemId);
+//        if(item==null)
+//        {
+//            System.out.println("cant find such item in stock");
+//            return false;
+//        }
 //        assert item != null;
 
-        System.out.println("item: "+item.toString());
-        float itemPrice = (float) item.get("price").asDouble();
-        float itemStock = (float) item.get("stock").asDouble();
+//        System.out.println("item: "+item.toString());
+//        float itemPrice = (float) item.get("price").asDouble();
+//        float itemStock = (float) item.get("stock").asDouble();
 
 
 //        if(itemStock < 1) {
@@ -131,7 +131,7 @@ public class OrderService {
             order.items = new ArrayList<>();
         }
         order.items.add(itemId);
-        order.total_cost += itemPrice;
+//        order.total_cost += itemPrice;
         orderMapper.save(order);
         return true;
     }
@@ -140,7 +140,7 @@ public class OrderService {
     //TODO Retrieve the price from the stock microservice
     public boolean removeItemFromOrder(UUID orderId, UUID itemId) {
 //        int itemPrice = 1;//dummy
-        float itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
+//        float itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
         Order order =  findOrderById(orderId);
         if (order == null) {
             return false;
@@ -150,7 +150,7 @@ public class OrderService {
             return false;
         }
         order.items.remove(itemId);
-        order.total_cost -= itemPrice;
+//        order.total_cost -= itemPrice;
         orderMapper.save(order);
         return true;
     }
