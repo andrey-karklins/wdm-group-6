@@ -13,7 +13,9 @@ public class Item {
     public int stock;
 
     public int price;
-
+    public Item() {
+        //
+    }
     public Item(String itemId, int stock, int price) {
         this.item_id = UUID.fromString(itemId);
         this.stock = stock;

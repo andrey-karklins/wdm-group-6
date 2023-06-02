@@ -1,5 +1,5 @@
 package app.services;
-
+import app.models.Item;
 import com.datastax.driver.core.Row;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
@@ -44,47 +44,47 @@ public class OrderEventsService {
         }
     }
 
-    private static void HandlerAddItem(String data){
-        String[] part =data.split(" ");
-        String orderId =part[0];
-        String itemId =part[1];
-        UUID itemid=UUID.fromString(itemId);
-        StockService stockervice = new StockService();
-        Row result = stockervice.findItemByID(itemid);
-        int item_price = 0;
-        //cant find the item
-        if( result ==  null)
-            item_price=-2;
-        //there is enough stock of the item
-        if (result!=null){
-            item_price = result.getInt("price");
-            //Row sub = stockervice.SubStock(itemid,1);
-        }
-//        System.out.println(item_price);
-        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+ item_price);
-    }
+//    private static void HandlerAddItem(String data){
+//        String[] part =data.split(" ");
+//        String orderId =part[0];
+//        String itemId =part[1];
+//        UUID itemid=UUID.fromString(itemId);
+//        StockService stockervice = new StockService();
+//        Item item = stockervice.findItemByID(itemid);
+//        int item_price = 0;
+//        //cant find the item
+//        if( result ==  null)
+//            item_price=-2;
+//        //there is enough stock of the item
+//        if (result!=null){
+//            item_price = result.getInt("price");
+//            //Row sub = stockervice.SubStock(itemid,1);
+//        }
+////        System.out.println(item_price);
+//        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+ item_price);
+//    }
 
-    private static void HandlerRemoveItem(String data){
-        String[] part = data.split(" ");
-        String orderId = part[0];
-        String itemId = part[1];
-        UUID itemid=UUID.fromString(itemId);
-        StockService stockservice = new StockService();
-        Row result = stockservice.findItemByID(itemid);
-        int item_price = 0;
-        //cant find the item
-        if( result ==  null)
-            item_price = -2;
-
-        //there is enough stock of the item
-        if (result!=null){
-            item_price = result.getInt("price");
-            //Row subtract = stockservice.AddStock(itemid,1);
-        }
-//        System.out.println(item_price);
-        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+ item_price);
-
-    }
+//    private static void HandlerRemoveItem(String data){
+//        String[] part = data.split(" ");
+//        String orderId = part[0];
+//        String itemId = part[1];
+//        UUID itemid=UUID.fromString(itemId);
+//        StockService stockservice = new StockService();
+//        Row result = stockservice.findItemByID(itemid);
+//        int item_price = 0;
+//        //cant find the item
+//        if( result ==  null)
+//            item_price = -2;
+//
+//        //there is enough stock of the item
+//        if (result!=null){
+//            item_price = result.getInt("price");
+//            //Row subtract = stockservice.AddStock(itemid,1);
+//        }
+////        System.out.println(item_price);
+//        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+ item_price);
+//
+//    }
     private static void HandlerOrderCheckout(String data)
     {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -117,8 +117,8 @@ public class OrderEventsService {
             UUID item_uuid = UUID.fromString(entry.getKey());
             Integer amount = entry.getValue();
 //            System.out.println("Key: " + item_uuid + ", Value: " + amount);
-            Row result = stockservice.findItemByID(item_uuid);
-            if(result.getInt("stock")<amount){
+            Item item = stockservice.findItemByID(item_uuid);
+            if(item.stock<amount){
                 //NOT enough stock for each item in the order
                 Map<String, Object> failmap = new HashMap<>();
                 failmap.put("OrderID",UUID.fromString(orderID));
@@ -141,10 +141,10 @@ public class OrderEventsService {
         for (Map.Entry<String, Integer> entry : items_map.entrySet()) {
             UUID item_uuid = UUID.fromString(entry.getKey());
             Integer amount = entry.getValue();
-            Row result = stockservice.findItemByID(item_uuid);
+            Item result = stockservice.findItemByID(item_uuid);
             // subtract the stock
-            Row subtract = stockservice.SubStock(item_uuid,amount);
-            total_price+=result.getInt("price");
+            boolean subtract = stockservice.SubStock(item_uuid,amount);
+            total_price+=result.price;
         }
         Map<String, Object> data_to_payment = new HashMap<>();
         data_to_payment.put("UserID", UUID.fromString(userID));
@@ -179,7 +179,7 @@ public class OrderEventsService {
         StockService stockService=new StockService();
         for(String s:items){
             items_uuid.add(UUID.fromString(s));
-            Row res = stockService.AddStock(UUID.fromString(s),1);
+            boolean res = stockService.AddStock(UUID.fromString(s),1);
         }
         Map<String, Object> data_to_payment = new HashMap<>();
         data_to_payment.put("UserID", UUID.fromString(userID));

@@ -1,5 +1,5 @@
 package app.controller;
-
+import app.models.Item;
 import app.StockError;
 import app.services.StockService;
 import com.datastax.driver.core.Row;
@@ -11,9 +11,9 @@ public class StockApiController {
     private static final StockService stock_service=new StockService();
     public Map<String, Object> find(String itemId) {
         UUID uuid = UUID.fromString(itemId);
-        Row row= null;
+        Item item= null;
         try{
-            row= stock_service.findItemByID(uuid);
+            item= stock_service.findItemByID(uuid);
         }catch(StockError e){
             System.out.println(e.getMessage());
             Map<String, Object> errorMap = new HashMap<>();
@@ -23,28 +23,24 @@ public class StockApiController {
         }
 
 //      return Map.of("stock", 10, "price", 100);
-        return Map.of("item_id", row.getUUID("item_id"), "stock", row.getInt("stock"), "price", row.getInt("price"));
+        return Map.of("item_id", item.item_id, "stock", item.stock, "price", item.price);
     }
 
     public String subtract(String itemId, int amount) {
         UUID id = UUID.fromString(itemId);
-        Row row = stock_service.SubStock(id, amount);
-        Map<String, String> resultMap = Map.of(
-                "item_id", row.getUUID("item_id").toString(),
-                "stock", Integer.toString(row.getInt("stock")),
-                "price", Integer.toString(row.getInt("price")));
-        return resultMap.toString();
+        boolean res = stock_service.SubStock(id, amount);
+        return res?"Success" : "Failure";
     }
 
 
     public String add(String itemId, int amount) {
         UUID id = UUID.fromString(itemId);
-        Row row = stock_service.AddStock(id, amount);
-        Map<String, String> resultMap = Map.of(
-                "item_id", row.getUUID("item_id").toString(),
-                "stock", Integer.toString(row.getInt("stock")),
-                "price", Integer.toString(row.getInt("price")));
-        return resultMap.toString();
+        boolean res = stock_service.AddStock(id, amount);
+//        Map<String, String> resultMap = Map.of(
+//                "item_id", row.getUUID("item_id").toString(),
+//                "stock", Integer.toString(row.getInt("stock")),
+//                "price", Integer.toString(row.getInt("price")));
+        return res?"Success" : "Failure";
     }
 
     public Map<String, Object> createItem(int price) {

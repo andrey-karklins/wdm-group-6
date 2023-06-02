@@ -58,7 +58,7 @@ public class PaymentEventsService {
         List<UUID> items_uuid = new ArrayList<>();;
         for (String s:items){
             items_uuid.add(UUID.fromString(s));
-            Row result = stockservice.AddStock(UUID.fromString(s),1);
+            boolean result = stockservice.AddStock(UUID.fromString(s),1);
         }
         //send failed event to OrderService
         Map<String, Object> failmap = new HashMap<>();
@@ -90,7 +90,7 @@ public class PaymentEventsService {
         List<UUID> items_uuid = new ArrayList<>();;
         for (String s:items){
             items_uuid.add(UUID.fromString(s));
-            Row result = stockservice.SubStock(UUID.fromString(s),1);
+            boolean result = stockservice.SubStock(UUID.fromString(s),1);
         }
         //send failed event to OrderService
         Map<String, Object> failmap = new HashMap<>();
