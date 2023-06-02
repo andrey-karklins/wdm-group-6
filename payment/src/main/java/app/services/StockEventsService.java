@@ -51,7 +51,7 @@ public class StockEventsService {
                         UUID item = UUID.fromString(itemNode.asText());
                         items.add(item);
                     }
-                    float totalCost = (float) responseJSON.get("TotalCost").asDouble();
+                    int totalCost = (int) responseJSON.get("TotalCost").asDouble();
                     if(event.equals("StockReturned")) {
                         PaymentApiController.returnFunds(userID, orderID, transactionID, totalCost, items);
                     }

@@ -6,26 +6,20 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
-import com.datastax.driver.mapping.*;
 import com.datastax.driver.mapping.annotations.Accessor;
 import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpException;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class OrderService {
@@ -36,7 +30,7 @@ public class OrderService {
     private static String keyspace = "order_keyspace";
 
     private final String stockUrl = "http://stock-service:5000";
-    static ConcurrentHashMap<String, Float> priceMap = new ConcurrentHashMap<>();
+    static ConcurrentHashMap<String, Integer> priceMap = new ConcurrentHashMap<>();
 
     static Mapper<Order> orderMapper;
 
@@ -79,7 +73,7 @@ public class OrderService {
                 + "paid boolean,"
                 + "items list<uuid>,"
                 + "user_id uuid,"
-                + "total_cost float);";
+                + "total_cost int);";
         session.execute(query);
     }
 
@@ -87,13 +81,13 @@ public class OrderService {
         OrderApp.clients.forEach(client -> client.sendEvent(event, data));
     }
 
-
-    public UUID createOrder(UUID userId) {
-        UUID orderId = UUID.randomUUID();
-        Order order = new Order(orderId, userId, false, 0.0f, new ArrayList<UUID>());
-        order.order_id = orderId;
-        orderMapper.save(order);
-        return orderId;
+    public static void updateOrder(UUID orderId, UUID userId, int totalCost) {
+        Order order = findOrderById(orderId);
+        if (order != null && order.user_id.equals(userId)) {
+            order.total_cost = totalCost;
+            order.paid = true;
+            orderMapper.save(order);
+        }
     }
 
     public static boolean cancelOrder(UUID orderId) {
@@ -103,56 +97,40 @@ public class OrderService {
         return true;
     }
 
-    //TODO Retrieve the price from the stock microservice
-    public boolean addItemToOrder(UUID orderId, UUID itemId) {
-//        int itemPrice = 1;//dummy
-
-        JsonNode item = requestItem(itemId);
-        if(item==null)
-        {
-            System.out.println("cant find such item in stock");
-            return false;
+    public static void cancelOrder(UUID orderId, UUID userId, UUID transactionId) {
+        Order order = findOrderById(orderId);
+        if (order.paid) {
+            sendEvent("OrderCancelledFailed", null);
+        } else {
+            changePaidStatus(orderId);
         }
-//        assert item != null;
-
-        System.out.println("item: "+item.toString());
-        float itemPrice = (float) item.get("price").asDouble();
-        float itemStock = (float) item.get("stock").asDouble();
-
-
-//        if(itemStock < 1) {
-//            return false;
-//        }
-        Order order =  findOrderById(orderId);
-        if (order == null) {
-            return false;
+        String orderIdString = orderId.toString();
+        String userIdString = userId.toString();
+        String transactionIdSting = transactionId.toString();
+        List<UUID> items = order.items;
+        int total_cost = order.total_cost;
+        Map<String, Object> data_to_stock = new HashMap<>();
+        data_to_stock.put("OrderID", UUID.fromString(orderIdString));
+        data_to_stock.put("UserID", UUID.fromString(userIdString));
+        data_to_stock.put("transactionID", UUID.fromString(transactionIdSting));
+        data_to_stock.put("Items", items);
+        data_to_stock.put("TotalCost", total_cost);
+        ObjectMapper objectMapper_to_payment = new ObjectMapper();
+        String data_json="";
+        try {
+            data_json = objectMapper_to_payment.writeValueAsString(data_to_stock);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        if (order.items == null) {
-            order.items = new ArrayList<>();
-        }
-        order.items.add(itemId);
-        order.total_cost += itemPrice;
-        orderMapper.save(order);
-        return true;
+        sendEvent("OrderCancelled",data_json);
     }
 
-
-    //TODO Retrieve the price from the stock microservice
-    public boolean removeItemFromOrder(UUID orderId, UUID itemId) {
-//        int itemPrice = 1;//dummy
-        float itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
-        Order order =  findOrderById(orderId);
-        if (order == null) {
-            return false;
-        }
-
-        if (order.items == null) {
-            return false;
-        }
-        order.items.remove(itemId);
-        order.total_cost -= itemPrice;
+    public UUID createOrder(UUID userId) {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order(orderId, userId, false, 0, new ArrayList<UUID>());
+        order.order_id = orderId;
         orderMapper.save(order);
-        return true;
+        return orderId;
     }
 
     /**
@@ -216,43 +194,45 @@ public class OrderService {
         Order getOrderById(@Param("order_id") UUID order_id);
     }
 
-
-
-    public static void updateOrder(UUID orderId, UUID userId, float totalCost) {
-        Order order = findOrderById(orderId);
-        if (order != null && order.user_id.equals(userId)) {
-            order.total_cost = totalCost;
-            order.paid = true;
-            orderMapper.save(order);
+    //TODO Retrieve the price from the stock microservice
+    public boolean addItemToOrder(UUID orderId, UUID itemId) {
+        JsonNode item = requestItem(itemId);
+        if (item == null) {
+            return false;
         }
+//        assert item != null;
+
+        int itemPrice = (int) item.get("price").asInt();
+
+        Order order = findOrderById(orderId);
+        if (order == null) {
+            return false;
+        }
+        if (order.items == null) {
+            order.items = new ArrayList<>();
+        }
+        order.items.add(itemId);
+        order.total_cost += itemPrice;
+        orderMapper.save(order);
+        return true;
     }
 
-    public static void cancelOrder(UUID orderId, UUID userId, UUID transactionId) {
+    //TODO Retrieve the price from the stock microservice
+    public boolean removeItemFromOrder(UUID orderId, UUID itemId) {
+//        int itemPrice = 1;//dummy
+        int itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
         Order order = findOrderById(orderId);
-        if (order.paid) {
-            sendEvent("OrderCancelledFailed", null);
-        } else {
-            changePaidStatus(orderId);
+        if (order == null) {
+            return false;
         }
-        String orderIdString = orderId.toString();
-        String userIdString = userId.toString();
-        String transactionIdSting = transactionId.toString();
-        List<UUID> items = order.items;
-        float total_cost = order.total_cost;
-        Map<String, Object> data_to_stock = new HashMap<>();
-        data_to_stock.put("OrderID", UUID.fromString(orderIdString));
-        data_to_stock.put("UserID", UUID.fromString(userIdString));
-        data_to_stock.put("transactionID", UUID.fromString(transactionIdSting));
-        data_to_stock.put("Items", items);
-        data_to_stock.put("TotalCost", total_cost);
-        ObjectMapper objectMapper_to_payment = new ObjectMapper();
-        String data_json="";
-        try {
-            data_json = objectMapper_to_payment.writeValueAsString(data_to_stock);
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        if (order.items == null) {
+            return false;
         }
-        sendEvent("OrderCancelled",data_json);
+        order.items.remove(itemId);
+        order.total_cost -= itemPrice;
+        orderMapper.save(order);
+        return true;
     }
 
 }

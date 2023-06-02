@@ -6,7 +6,6 @@ import app.services.PaymentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -29,21 +28,21 @@ public class PaymentApiController {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static final ConcurrentHashMap<UUID, CompletableFuture<String>> transactionMap = new ConcurrentHashMap<>();
-    public String pay(String userId, String orderId, float amount) {
+    public static void returnFunds(UUID userID, UUID orderID, UUID transactionID, int totalCost, List<UUID> items) throws JsonProcessingException {
+        try {
+            PaymentService.addFunds(userID, totalCost);
+            transactionMap.get(transactionID).complete("Success");
+        } catch (Exception e) {
+            String err = "Adding funds back failed due to " + e;
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("UserID", userID);
+            eventData.put("OrderID", orderID);
+            eventData.put("TransactionID", transactionID);
+            eventData.put("ErrorMsg", err);
+            eventData.put("Items", items);
+            PaymentService.sendEvent("ReturnFundsFailed", mapper.writeValueAsString(eventData));
+        }
 
-
-            User user = PaymentService.findUserById(UUID.fromString(userId));
-            if (user.credit < amount) {
-                throw new PaymentError("Not Enough Credit");
-            }
-
-            boolean status = PaymentService.addFunds(UUID.fromString(userId), -1*amount);
-            if (status) {
-                PaymentService.sendEvent("PaymentSucceeded", orderId);
-                return "Payment went through.";
-            }
-
-        return "Payment failed";
     }
 
     public String cancel(String userId, String orderId) throws ExecutionException, InterruptedException, JsonProcessingException {
@@ -61,32 +60,13 @@ public class PaymentApiController {
 
     }
 
-
-    public static void returnFunds(UUID userID, UUID orderID, UUID transactionID, float totalCost, List<UUID> items) throws JsonProcessingException {
-        try {
-            PaymentService.addFunds(userID, totalCost);
-            transactionMap.get(transactionID).complete("Success");
-        }
-        catch (Exception e) {
-            String err = "Adding funds back failed due to " + e;
-            Map<String, Object> eventData = new HashMap<>();
-            eventData.put("UserID", userID);
-            eventData.put("OrderID", orderID);
-            eventData.put("TransactionID", transactionID);
-            eventData.put("ErrorMsg", err);
-            eventData.put("Items", items);
-            PaymentService.sendEvent("ReturnFundsFailed", mapper.writeValueAsString(eventData));
-        }
-
-    }
-
-    public static void subtractFunds(UUID userID, UUID orderID, UUID transactionID, float totalCost, List<UUID> items) throws JsonProcessingException {
+    public static void subtractFunds(UUID userID, UUID orderID, UUID transactionID, int totalCost, List<UUID> items) throws JsonProcessingException {
         try {
             User user = PaymentService.findUserById(userID);
-            if(user.credit < totalCost) {
+            if (user.credit < totalCost) {
                 throw new PaymentError("Not enough credit");
             }
-            PaymentService.addFunds(userID, -1*totalCost);
+            PaymentService.addFunds(userID, -1 * totalCost);
 
             Map<String, Object> eventData = new HashMap<>();
             eventData.put("OrderID", orderID);
@@ -105,6 +85,23 @@ public class PaymentApiController {
             eventData.put("Items", items);
             PaymentService.sendEvent("FundsSubtractFailed", mapper.writeValueAsString(eventData));
         }
+    }
+
+    public String pay(String userId, String orderId, int amount) {
+
+
+        User user = PaymentService.findUserById(UUID.fromString(userId));
+        if (user.credit < amount) {
+            throw new PaymentError("Not Enough Credit");
+        }
+
+        boolean status = PaymentService.addFunds(UUID.fromString(userId), -1 * amount);
+        if (status) {
+            PaymentService.sendEvent("PaymentSucceeded", orderId);
+                return "Payment went through.";
+            }
+
+        return "Payment failed";
     }
 
     public Map<String, Object> status(String userId, String orderId) {
@@ -127,7 +124,7 @@ public class PaymentApiController {
         return res;
     }
 
-    public Map<String, Object> addFunds(String userId, float amount) {
+    public Map<String, Object> addFunds(String userId, int amount) {
         Map<String, Object> res = new HashMap<>(Map.of("paid", true));
         boolean success = PaymentService.addFunds(UUID.fromString(userId), amount);
         res.put("paid", success);
