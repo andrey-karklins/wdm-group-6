@@ -73,11 +73,13 @@ public class StockService {
         ResultSet resultSet=session.execute(boundStatement);
 //        System.out.println(m2);
 //        System.out.println("Item ID data type: " + itemID.getClass().getName());
-        System.out.println(resultSet);
-//        if (resultSet.one()==null){
-//            throw new StockError("can't find such item in stock");
-//        }
-        return resultSet.one();
+
+        Row row = resultSet.one();
+        System.out.println(row);
+        if (row==null){
+            throw new StockError("can't find such item in stock");
+        }
+        return row;
     }
     public UUID CreateItem(float price) {
 //        PreparedStatement preparedStatement = session.prepare(query);

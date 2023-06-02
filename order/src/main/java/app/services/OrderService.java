@@ -15,6 +15,7 @@ import com.datastax.driver.mapping.*;
 import com.datastax.driver.mapping.annotations.Accessor;
 import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
@@ -107,24 +108,28 @@ public class OrderService {
 //        int itemPrice = 1;//dummy
 
         JsonNode item = requestItem(itemId);
+        if(item==null)
+        {
+            System.out.println("cant find such item in stock");
+            return false;
+        }
+//        assert item != null;
 
-        assert item != null;
+        System.out.println("item: "+item.toString());
         float itemPrice = (float) item.get("price").asDouble();
         float itemStock = (float) item.get("stock").asDouble();
+
 
 //        if(itemStock < 1) {
 //            return false;
 //        }
-
         Order order =  findOrderById(orderId);
         if (order == null) {
             return false;
         }
-
         if (order.items == null) {
             order.items = new ArrayList<>();
         }
-
         order.items.add(itemId);
         order.total_cost += itemPrice;
         orderMapper.save(order);
@@ -162,7 +167,13 @@ public class OrderService {
             HttpGet request = new HttpGet(url);
             String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
             ObjectMapper JSONmapper = new ObjectMapper();
-            return JSONmapper.readTree(response);
+            try {
+                return JSONmapper.readTree(response);
+            } catch (JsonParseException e) {
+                // Invalid JSON response
+                // System.err.println("Invalid JSON response: " + response);
+                return null;
+            }
         }
         catch (IOException e) {
             e.printStackTrace();
