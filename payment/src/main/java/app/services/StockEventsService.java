@@ -1,14 +1,22 @@
 package app.services;
 
+import app.controllers.PaymentApiController;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class StockEventsService {
     private static boolean connected = false;
+    private static final ObjectMapper mapper = new ObjectMapper();
     public static void listen() throws InterruptedException {
         Client client = ClientBuilder.newBuilder().build();
         WebTarget target = client.target("http://stock-service:5000/sse");
@@ -30,9 +38,32 @@ public class StockEventsService {
             // ... (TODO)
             case "ItemStock":
                 break;
+            case "StockReturned":
             case "StockSubtracted":
-                System.out.println("StockSubtracted" + data);
+                try {
+                    JsonNode responseJSON = mapper.readTree(data);
+                    UUID transactionID = UUID.fromString(responseJSON.get("TransactionID").asText());
+                    UUID userID = UUID.fromString(responseJSON.get("UserID").asText());
+                    UUID orderID = UUID.fromString(responseJSON.get("OrderID").asText());
+                    JsonNode itemsNode = responseJSON.get("Items");
+                    List<UUID> items = new ArrayList<>();
+                    for (JsonNode itemNode : itemsNode) {
+                        UUID item = UUID.fromString(itemNode.asText());
+                        items.add(item);
+                    }
+                    float totalCost = (float) responseJSON.get("TotalCost").asDouble();
+                    if(event.equals("StockReturned")) {
+                        PaymentApiController.returnFunds(userID, orderID, transactionID, totalCost, items);
+                    }
+                    else {
+                        PaymentApiController.subtractFunds(userID, orderID, transactionID, totalCost, items);
+                    }
+
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
                 break;
+
             default:
                 System.out.println("Unknown event: " + event);
         }
