@@ -1,14 +1,14 @@
 package app.services;
-import java.util.*;
 
+import com.datastax.driver.core.Row;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 
-import com.datastax.driver.core.*;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class OrderEventsService {
@@ -51,13 +51,13 @@ public class OrderEventsService {
         UUID itemid=UUID.fromString(itemId);
         StockService stockervice = new StockService();
         Row result = stockervice.findItemByID(itemid);
-        float item_price=0.0f;
+        int item_price = 0;
         //cant find the item
         if( result ==  null)
             item_price=-2;
         //there is enough stock of the item
         if (result!=null){
-            item_price = result.getFloat("price");
+            item_price = result.getInt("price");
             //Row sub = stockervice.SubStock(itemid,1);
         }
 //        System.out.println(item_price);
@@ -71,14 +71,14 @@ public class OrderEventsService {
         UUID itemid=UUID.fromString(itemId);
         StockService stockservice = new StockService();
         Row result = stockservice.findItemByID(itemid);
-        float item_price = 0;
+        int item_price = 0;
         //cant find the item
         if( result ==  null)
             item_price = -2;
 
         //there is enough stock of the item
         if (result!=null){
-            item_price = result.getFloat("price");
+            item_price = result.getInt("price");
             //Row subtract = stockservice.AddStock(itemid,1);
         }
 //        System.out.println(item_price);
@@ -100,8 +100,7 @@ public class OrderEventsService {
         String transactionID = (String) data_map.get("TransactionID");
 //        System.out.println("UserID: " + userID);
 //        System.out.println("Items: " + items);
-        System.out.println("transactionID: " + transactionID);
-        float total_price = 0.0f;
+        int total_price = 0;
         StockService stockservice = new StockService();
         List<UUID> items_uuid = new ArrayList<>();;
         Map<String, Integer> items_map = new HashMap<>();
@@ -124,7 +123,7 @@ public class OrderEventsService {
                 Map<String, Object> failmap = new HashMap<>();
                 failmap.put("OrderID",UUID.fromString(orderID));
                 failmap.put("Items",items_uuid);
-                failmap.put("TransactionID",UUID.fromString(transactionID));
+                failmap.put("TransactionID", UUID.fromString(transactionID));
                 String errorMsg="NOT enough stock";
                 failmap.put("ErrorMsg",errorMsg);
                 ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
@@ -134,7 +133,6 @@ public class OrderEventsService {
                 }catch(Exception e1) {
                     e1.printStackTrace();
                 }
-                System.out.println("sendEvent StockSubtract Failed"+data_json_fail);
                 StockService.sendEvent("StockSubtractFailed",data_json_fail);
                 throw new IllegalStateException("Stock subtraction failed, aborting.");
             }
@@ -143,11 +141,10 @@ public class OrderEventsService {
         for (Map.Entry<String, Integer> entry : items_map.entrySet()) {
             UUID item_uuid = UUID.fromString(entry.getKey());
             Integer amount = entry.getValue();
-            System.out.println("Key: " + item_uuid + ", Value: " + amount);
             Row result = stockservice.findItemByID(item_uuid);
             // subtract the stock
             Row subtract = stockservice.SubStock(item_uuid,amount);
-            total_price+=result.getFloat("price");
+            total_price+=result.getInt("price");
         }
         Map<String, Object> data_to_payment = new HashMap<>();
         data_to_payment.put("UserID", UUID.fromString(userID));

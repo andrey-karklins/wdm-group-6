@@ -42,7 +42,7 @@ public class StockEventsService {
 //                System.out.println("ItemStock: " + data);
                 String orderId = data.split(" ")[0];
                 String itemId = data.split(" ")[1];
-                float price = Float.parseFloat(data.split(" ")[2]);
+                int price = Integer.parseInt(data.split(" ")[2]);
                 OrderService.priceMap.put(orderId + " " + itemId, price);
                 break;
 //            case "StockSubtractedFailed":

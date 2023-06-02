@@ -10,5 +10,5 @@ public class User {
     @PartitionKey
     public UUID user_id = UUID.randomUUID();
 
-    public float credit = 0.0f;
+    public int credit = 0;
 }
