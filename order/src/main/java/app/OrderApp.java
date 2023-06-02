@@ -24,6 +24,7 @@ public class OrderApp {
             post("addItem/{order_id}/{item_id}", ctx -> ctx.json(api.addItem(ctx.pathParam("order_id"), ctx.pathParam("item_id"))));
             delete("removeItem/{order_id}/{item_id}", ctx -> ctx.json(api.removeItem(ctx.pathParam("order_id"), ctx.pathParam("item_id"))));
             post("checkout/{order_id}", ctx -> ctx.json(api.checkout(ctx.pathParam("order_id"))));
+            post("cancelPayment/{order_id}", ctx -> ctx.json(api.cancelPayment(ctx.pathParam("order_id"))));
         });
         app.sse("/sse", (client) -> {
             client.sendEvent("connected", "order-service");

@@ -1,11 +1,21 @@
 package app.services;
 
+import app.controllers.OrderApiController;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import static app.services.OrderService.changePaidStatus;
+import static app.services.OrderService.sendEvent;
 
 public class StockEventsService {
     private static boolean connected = false;
@@ -29,12 +39,55 @@ public class StockEventsService {
             // Below events to be handled
             // ... (TODO)
             case "ItemStock":
-                System.out.println("ItemStock: " + data);
+//                System.out.println("ItemStock: " + data);
                 String orderId = data.split(" ")[0];
                 String itemId = data.split(" ")[1];
                 float price = Float.parseFloat(data.split(" ")[2]);
                 OrderService.priceMap.put(orderId + " " + itemId, price);
                 break;
+//            case "StockSubtractedFailed":
+//                System.out.println("StockSubtractedFailed: " + data);
+//                break;
+            case "StockSubtractFailed":
+                ObjectMapper objectMapper = new ObjectMapper();
+                try {
+                    System.out.println(data);
+                    JsonNode jsonNode = objectMapper.readTree(data);
+                    UUID failedOrderId = UUID.fromString(jsonNode.get("OrderID").asText());
+                    System.out.println(failedOrderId);
+                    UUID transactionId = UUID.fromString(jsonNode.get("TransactionID").asText());
+                    String errorMsg = jsonNode.get("ErrorMsg").asText();
+                    OrderApiController.checkoutTransactionMap.get(transactionId).complete(errorMsg);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+
+            case "StockReturnFailed":
+                ObjectMapper objectMapper2 = new ObjectMapper();
+                try {
+                    System.out.println(data);
+                    JsonNode jsonNode = objectMapper2.readTree(data);
+                    UUID failedOrderId = UUID.fromString(jsonNode.get("OrderID").asText());
+                    UUID transactionId = UUID.fromString(jsonNode.get("TransactionID").asText());
+                    String errorMsg = jsonNode.get("ErrorMsg").asText();
+                    changePaidStatus(failedOrderId);
+
+                    Map<String, Object> data_to_payment = new HashMap<>();
+                    data_to_payment.put("transactionID", transactionId);
+                    data_to_payment.put("ErrorMsg", errorMsg);
+                    String data_json="";
+                    try {
+                        data_json = objectMapper2.writeValueAsString(data_to_payment);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    sendEvent("OrderCancelledFailed", data_json);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+
             default:
                 System.out.println("Unknown event: " + event);
         }

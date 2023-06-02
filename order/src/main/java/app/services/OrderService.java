@@ -8,14 +8,14 @@ import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.datastax.driver.mapping.*;
 import com.datastax.driver.mapping.annotations.Accessor;
 import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
@@ -108,24 +108,28 @@ public class OrderService {
 //        int itemPrice = 1;//dummy
 
         JsonNode item = requestItem(itemId);
+        if(item==null)
+        {
+            System.out.println("cant find such item in stock");
+            return false;
+        }
+//        assert item != null;
 
-        assert item != null;
+        System.out.println("item: "+item.toString());
         float itemPrice = (float) item.get("price").asDouble();
         float itemStock = (float) item.get("stock").asDouble();
 
-        if(itemStock < 1) {
-            return false;
-        }
 
+//        if(itemStock < 1) {
+//            return false;
+//        }
         Order order =  findOrderById(orderId);
         if (order == null) {
             return false;
         }
-
         if (order.items == null) {
             order.items = new ArrayList<>();
         }
-
         order.items.add(itemId);
         order.total_cost += itemPrice;
         orderMapper.save(order);
@@ -163,7 +167,13 @@ public class OrderService {
             HttpGet request = new HttpGet(url);
             String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
             ObjectMapper JSONmapper = new ObjectMapper();
-            return JSONmapper.readTree(response);
+            try {
+                return JSONmapper.readTree(response);
+            } catch (JsonParseException e) {
+                // Invalid JSON response
+                // System.err.println("Invalid JSON response: " + response);
+                return null;
+            }
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -205,4 +215,44 @@ public class OrderService {
         @Query("SELECT * FROM orders WHERE order_id = :order_id")
         Order getOrderById(@Param("order_id") UUID order_id);
     }
+
+
+
+    public static void updateOrder(UUID orderId, UUID userId, float totalCost) {
+        Order order = findOrderById(orderId);
+        if (order != null && order.user_id.equals(userId)) {
+            order.total_cost = totalCost;
+            order.paid = true;
+            orderMapper.save(order);
+        }
+    }
+
+    public static void cancelOrder(UUID orderId, UUID userId, UUID transactionId) {
+        Order order = findOrderById(orderId);
+        if (order.paid) {
+            sendEvent("OrderCancelledFailed", null);
+        } else {
+            changePaidStatus(orderId);
+        }
+        String orderIdString = orderId.toString();
+        String userIdString = userId.toString();
+        String transactionIdSting = transactionId.toString();
+        List<UUID> items = order.items;
+        float total_cost = order.total_cost;
+        Map<String, Object> data_to_stock = new HashMap<>();
+        data_to_stock.put("OrderID", UUID.fromString(orderIdString));
+        data_to_stock.put("UserID", UUID.fromString(userIdString));
+        data_to_stock.put("transactionID", UUID.fromString(transactionIdSting));
+        data_to_stock.put("Items", items);
+        data_to_stock.put("TotalCost", total_cost);
+        ObjectMapper objectMapper_to_payment = new ObjectMapper();
+        String data_json="";
+        try {
+            data_json = objectMapper_to_payment.writeValueAsString(data_to_stock);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        sendEvent("OrderCancelled",data_json);
+    }
+
 }

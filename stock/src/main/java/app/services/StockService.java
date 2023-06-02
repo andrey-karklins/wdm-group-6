@@ -1,6 +1,7 @@
 package app.services;
 
 import app.StockApp;
+import app.StockError;
 import com.datastax.driver.core.*;
 import com.datastax.driver.mapping.MappingManager;
 
@@ -32,7 +33,7 @@ public class StockService {
                 + "stock int,"
                 + "price float);";
         session.execute(query);
-        query = "INSERT INTO items (item_id, stock, price) VALUES (9552eace-06a7-4a5e-a90d-9200063ed94a,100,6)";
+        query = "INSERT INTO items (item_id, stock, price) VALUES (9552eace-06a7-4a5e-a90d-9200063ed94a,5,6)";
         session.execute(query);
 
     }
@@ -72,7 +73,13 @@ public class StockService {
         ResultSet resultSet=session.execute(boundStatement);
 //        System.out.println(m2);
 //        System.out.println("Item ID data type: " + itemID.getClass().getName());
-        return resultSet.one();
+
+        Row row = resultSet.one();
+        System.out.println(row);
+        if (row==null){
+            throw new StockError("can't find such item in stock");
+        }
+        return row;
     }
     public UUID CreateItem(float price) {
 //        PreparedStatement preparedStatement = session.prepare(query);
@@ -100,6 +107,9 @@ public class StockService {
     public Row SubStock(UUID itemID,int amount){
         Row row = findItemByID(itemID);
         int original_stock = row.getInt("stock");
+        if (original_stock<amount){
+            throw new StockError("stock not enough");
+        }
         int new_stock = original_stock-amount;
         String query = "UPDATE items SET stock = ? WHERE item_id = ?";
         PreparedStatement preparedStatement = session.prepare(query);
