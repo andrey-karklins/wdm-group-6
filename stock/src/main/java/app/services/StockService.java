@@ -1,9 +1,14 @@
 package app.services;
 
 import app.StockApp;
+import app.models.Item;
 import app.StockError;
 import com.datastax.driver.core.*;
+import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
+import com.datastax.driver.mapping.annotations.Accessor;
+import com.datastax.driver.mapping.annotations.Param;
+import com.datastax.driver.mapping.annotations.Query;
 
 import java.util.UUID;
 
@@ -11,6 +16,7 @@ public class StockService {
     static Cluster cluster = null;
     static Session session = null;
     static MappingManager mapper = null;
+    static Mapper<Item> itemMapper;
     static boolean initialized = false;
 
     public static void sendEvent(String event, String data) {
@@ -52,6 +58,7 @@ public class StockService {
 //                Item newItem = new Item("9552eace-06a7-4a5e-a90d-9200063ed94a", 10, 6);
 //                insertItem(newItem);
                 mapper = new MappingManager(session);
+                itemMapper=mapper.mapper(Item.class,"stock_keyspace");
                 initialized = true;
             } catch (Exception e) {
                 System.out.println("Cassandra is not ready yet, retrying in 5 seconds...");
@@ -62,59 +69,69 @@ public class StockService {
     }
 
     // Here implement functions to interact with Cassandra
-    public Row findItemByID(UUID itemID){
-        session.execute("USE stock_keyspace");
+    public Item findItemByID(UUID itemID){
+//        session.execute("USE stock_keyspace");
 //        String m2="SELECT * FROM items WHERE item_id = "+itemID;
 //        System.out.println(m2);
 //        ResultSet resultSet = session.execute("SELECT * FROM items WHERE item_id = ?", itemID);
-        String query = "SELECT * FROM items WHERE item_id = ?";
-        PreparedStatement preparedStatement = session.prepare(query);
-        BoundStatement boundStatement = preparedStatement.bind(itemID);
-        ResultSet resultSet=session.execute(boundStatement);
+//        String query = "SELECT * FROM items WHERE item_id = ?";
+//        PreparedStatement preparedStatement = session.prepare(query);
+//        BoundStatement boundStatement = preparedStatement.bind(itemID);
+//        ResultSet resultSet=session.execute(boundStatement);
 //        System.out.println(m2);
 //        System.out.println("Item ID data type: " + itemID.getClass().getName());
+        ItemAccessor itemAccessor = mapper.createAccessor(ItemAccessor.class);
+//        Row row = resultSet.one();
 
-        Row row = resultSet.one();
-        if (row == null) {
+        Item item = itemAccessor.getItemById(itemID);
+        if (item == null) {
             throw new StockError("can't find such item in stock");
         }
-        return row;
+        return item;
     }
 
     public UUID CreateItem(int price) {
 //        PreparedStatement preparedStatement = session.prepare(query);
-//         Bind the values to the query
+//        Bind the values to the query
 //        BoundStatement boundStatement = preparedStatement.bind(id, 0, price);
 //        session.execute(boundStatement);
-        UUID id = UUID.randomUUID();
-//        System.out.println(id);
-        String query = "INSERT INTO items (item_id, stock, price) VALUES (" + id + ",0," + price + ")";
-//        System.out.println(query);
-        session.execute(query);
 
+        UUID id = UUID.randomUUID();
+        Item item=new Item(id.toString(),0,price);
+        itemMapper.save(item);
+//        System.out.println(id);
+//        String query = "INSERT INTO items (item_id, stock, price) VALUES (" + id + ",0," + price + ")";
+////        System.out.println(query);
+//        session.execute(query);
         return id;
     }
-    public Row AddStock(UUID itemID,int amount){
-        Row row = findItemByID(itemID);
-        int original_stock = row.getInt("stock");
-        int new_stock = original_stock+amount;
-        String query = "UPDATE items SET stock = ? WHERE item_id = ?";
-        PreparedStatement preparedStatement = session.prepare(query);
-        BoundStatement boundStatement = preparedStatement.bind(new_stock, itemID);
-        session.execute(boundStatement);
-        return findItemByID(itemID);
+    public boolean AddStock(UUID itemID,int amount){
+        Item item = findItemByID(itemID);
+//        String query = "UPDATE items SET stock = ? WHERE item_id = ?";
+//        PreparedStatement preparedStatement = session.prepare(query);
+//        BoundStatement boundStatement = preparedStatement.bind(new_stock, itemID);
+//        session.execute(boundStatement);
+        item.stock += amount;
+        itemMapper.save(item);
+        return true;
     }
-    public Row SubStock(UUID itemID,int amount){
-        Row row = findItemByID(itemID);
-        int original_stock = row.getInt("stock");
+    public boolean SubStock(UUID itemID,int amount){
+        Item item = findItemByID(itemID);
+        int original_stock = item.stock;
         if (original_stock<amount){
             throw new StockError("stock not enough");
         }
-        int new_stock = original_stock-amount;
-        String query = "UPDATE items SET stock = ? WHERE item_id = ?";
-        PreparedStatement preparedStatement = session.prepare(query);
-        BoundStatement boundStatement = preparedStatement.bind(new_stock, itemID);
-        session.execute(boundStatement);
-        return findItemByID(itemID);
+        item.stock-=amount;
+        itemMapper.save(item);
+//        String query = "UPDATE items SET stock = ? WHERE item_id = ?";
+//        PreparedStatement preparedStatement = session.prepare(query);
+//        BoundStatement boundStatement = preparedStatement.bind(new_stock, itemID);
+//        session.execute(boundStatement);
+        return true;
+    }
+    @Accessor
+    public interface ItemAccessor {
+        @Query("SELECT * FROM items WHERE item_id = :item_id")
+        Item getItemById(@Param("item_id") UUID item_id);
     }
 }
