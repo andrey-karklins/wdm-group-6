@@ -23,11 +23,10 @@ import java.util.concurrent.ExecutionException;
 
 public class PaymentApiController {
 
+    public static final ConcurrentHashMap<UUID, CompletableFuture<String>> transactionMap = new ConcurrentHashMap<>();
+    private static final ObjectMapper mapper = new ObjectMapper();
     private final String orderUrl = "http://order-service:5000";
 
-    private static final ObjectMapper mapper = new ObjectMapper();
-
-    public static final ConcurrentHashMap<UUID, CompletableFuture<String>> transactionMap = new ConcurrentHashMap<>();
     public static void returnFunds(UUID userID, UUID orderID, UUID transactionID, int totalCost, List<UUID> items) throws JsonProcessingException {
         try {
             PaymentService.addFunds(userID, totalCost);
@@ -42,21 +41,6 @@ public class PaymentApiController {
             eventData.put("Items", items);
             PaymentService.sendEvent("ReturnFundsFailed", mapper.writeValueAsString(eventData));
         }
-
-    }
-
-    public String cancel(String userId, String orderId) throws ExecutionException, InterruptedException, JsonProcessingException {
-
-            UUID transactionID = UUID.randomUUID();
-            CompletableFuture<String> future = new CompletableFuture<>();
-            Map<String, Object> eventData = new HashMap<>();
-            eventData.put("UserID", userId);
-            eventData.put("OrderID", orderId);
-            eventData.put("TransactionID", transactionID);
-            transactionMap.put(transactionID, future);
-            PaymentService.sendEvent("CancelPayment", mapper.writeValueAsString(eventData));
-
-        return future.get();
 
     }
 
@@ -87,6 +71,24 @@ public class PaymentApiController {
         }
     }
 
+    public String cancel(String userId, String orderId) throws ExecutionException, InterruptedException, JsonProcessingException {
+        UUID transactionID = UUID.randomUUID();
+        CompletableFuture<String> future = new CompletableFuture<>();
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("UserID", userId);
+        eventData.put("OrderID", orderId);
+        eventData.put("TransactionID", transactionID);
+        transactionMap.put(transactionID, future);
+        PaymentService.sendEvent("CancelPayment", mapper.writeValueAsString(eventData));
+        String result = future.get();
+        transactionMap.remove(transactionID);
+        if (result != "Success") {
+            throw new PaymentError(result);
+        }
+        return result;
+
+    }
+
     public String pay(String userId, String orderId, int amount) {
 
 
@@ -98,8 +100,8 @@ public class PaymentApiController {
         boolean status = PaymentService.addFunds(UUID.fromString(userId), -1 * amount);
         if (status) {
             PaymentService.sendEvent("PaymentSucceeded", orderId);
-                return "Payment went through.";
-            }
+            return "Payment went through.";
+        }
 
         return "Payment failed";
     }
@@ -114,7 +116,7 @@ public class PaymentApiController {
             String receivedUserId = responseJSON.get("user_id").asText();
             boolean paid = responseJSON.get("paid").asBoolean();
 
-            if(receivedUserId.equals(userId)) {
+            if (receivedUserId.equals(userId)) {
                 res.put("paid", paid);
                 return res;
             }
@@ -143,10 +145,9 @@ public class PaymentApiController {
         User user = PaymentService.findUserById(UUID.fromString(userId));
 
         if (user != null) {
-             res.put("userId", user.user_id.toString());
-             res.put("credit", user.credit);
-            }
-        else throw new PaymentError("User not found");
+            res.put("userId", user.user_id.toString());
+            res.put("credit", user.credit);
+        } else throw new PaymentError("User not found");
         return res;
 
     }

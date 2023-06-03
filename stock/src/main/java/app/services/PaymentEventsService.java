@@ -1,6 +1,5 @@
 package app.services;
 
-import com.datastax.driver.core.Row;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -13,13 +12,14 @@ import java.util.concurrent.TimeUnit;
 
 public class PaymentEventsService {
     private static boolean connected = false;
+
     public static void listen() throws InterruptedException {
         Client client = ClientBuilder.newBuilder().build();
         WebTarget target = client.target("http://payment-service:5000/sse");
         SseEventSource sseEventSource = SseEventSource.target(target).reconnectingEvery(1, TimeUnit.SECONDS).build();
         sseEventSource.register(event -> handler(event.getName(), event.readData(String.class)));
         sseEventSource.open();
-        while(!connected) {
+        while (!connected) {
             Thread.sleep(1000);
         }
     }
@@ -42,13 +42,13 @@ public class PaymentEventsService {
                 System.out.println("Unknown event: " + event);
         }
     }
-    private static void HandlerFundsSubtractFailed(String data)
-    {
+
+    private static void HandlerFundsSubtractFailed(String data) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<Object, Object> data_map = new HashMap<>();
         try {
             data_map = objectMapper.readValue(data, Map.class);
-        }catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         List<String> items = (List<String>) data_map.get("Items");
@@ -56,56 +56,58 @@ public class PaymentEventsService {
         String transactionID = (String) data_map.get("TransactionID");
         String errorMsg = (String) data_map.get("ErrorMsg");
         StockService stockservice = new StockService();
-        List<UUID> items_uuid = new ArrayList<>();;
-        for (String s:items){
+        List<UUID> items_uuid = new ArrayList<>();
+        ;
+        for (String s : items) {
             items_uuid.add(UUID.fromString(s));
-            boolean result = stockservice.AddStock(UUID.fromString(s),1);
+            boolean result = stockservice.AddStock(UUID.fromString(s), 1);
         }
         //send failed event to OrderService
         Map<String, Object> failmap = new HashMap<>();
-        failmap.put("OrderID",UUID.fromString(orderID));
-        failmap.put("Items",items_uuid);
+        failmap.put("OrderID", UUID.fromString(orderID));
+        failmap.put("Items", items_uuid);
         failmap.put("TransactionID", UUID.fromString(transactionID));
         failmap.put("ErrorMsg", errorMsg);
         ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
-        String data_json_fail="";
+        String data_json_fail = "";
         try {
             data_json_fail = objectMapper_to_user_fail.writeValueAsString(failmap);
-        }catch(Exception e1) {
+        } catch (Exception e1) {
             e1.printStackTrace();
         }
-        StockService.sendEvent("StockSubtractFailed",data_json_fail);
+        StockService.sendEvent("StockSubtractFailed", data_json_fail);
     }
-    private static void HandlerReturnFundsFailed(String data)
-    {
+
+    private static void HandlerReturnFundsFailed(String data) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<Object, Object> data_map = new HashMap<>();
         try {
             data_map = objectMapper.readValue(data, Map.class);
-        }catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         List<String> items = (List<String>) data_map.get("Items");
         String orderID = (String) data_map.get("OrderID");
         String transactionID = (String) data_map.get("TransactionID");
         StockService stockservice = new StockService();
-        List<UUID> items_uuid = new ArrayList<>();;
-        for (String s:items){
+        List<UUID> items_uuid = new ArrayList<>();
+        ;
+        for (String s : items) {
             items_uuid.add(UUID.fromString(s));
-            boolean result = stockservice.SubStock(UUID.fromString(s),1);
+            boolean result = stockservice.SubStock(UUID.fromString(s), 1);
         }
         //send failed event to OrderService
         Map<String, Object> failmap = new HashMap<>();
-        failmap.put("OrderID",UUID.fromString(orderID));
-        failmap.put("TransactionID",UUID.fromString(transactionID));
+        failmap.put("OrderID", UUID.fromString(orderID));
+        failmap.put("TransactionID", UUID.fromString(transactionID));
 //        failmap.put("Items",items_uuid);
         ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
-        String data_json_fail="";
+        String data_json_fail = "";
         try {
             data_json_fail = objectMapper_to_user_fail.writeValueAsString(failmap);
-        }catch(Exception e1) {
+        } catch (Exception e1) {
             e1.printStackTrace();
         }
-        StockService.sendEvent("StockReturnFailed",data_json_fail);
+        StockService.sendEvent("StockReturnFailed", data_json_fail);
     }
 }

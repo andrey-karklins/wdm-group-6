@@ -1,7 +1,7 @@
 package app;
 
-import app.services.OrderService;
 import app.controllers.OrderApiController;
+import app.services.OrderService;
 import app.services.PaymentEventsService;
 import app.services.StockEventsService;
 import io.javalin.Javalin;
@@ -25,6 +25,7 @@ public class OrderApp {
             delete("removeItem/{order_id}/{item_id}", ctx -> ctx.json(api.removeItem(ctx.pathParam("order_id"), ctx.pathParam("item_id"))));
             post("checkout/{order_id}", ctx -> ctx.json(api.checkout(ctx.pathParam("order_id"))));
             post("cancelPayment/{order_id}", ctx -> ctx.json(api.cancelPayment(ctx.pathParam("order_id"))));
+            get("transactions", ctx -> ctx.json(OrderApiController.checkoutTransactionMap));
         });
         app.sse("/sse", (client) -> {
             client.sendEvent("connected", "order-service");

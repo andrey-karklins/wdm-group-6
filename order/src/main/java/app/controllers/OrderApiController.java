@@ -1,11 +1,10 @@
 package app.controllers;
 
 import app.OrderError;
-import app.services.OrderService;
 import app.models.Order;
-import com.fasterxml.jackson.databind.ObjectMapper; // import jackson library
-import java.util.Map;
-import java.util.HashMap;
+import app.services.OrderService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,9 +13,8 @@ import java.util.stream.Collectors;
 
 
 public class OrderApiController {
-    private static final OrderService orderService = new OrderService();
     public static final ConcurrentHashMap<UUID, CompletableFuture<String>> checkoutTransactionMap = new ConcurrentHashMap<>();
-
+    private static final OrderService orderService = new OrderService();
 
     public Map<String, String> createOrder(String userId) {
         UUID userIdUUID = UUID.fromString(userId);
@@ -30,9 +28,8 @@ public class OrderApiController {
         String items = "";
         for (int i = 0; i < resultOrder.items.size(); i++) {
             items += resultOrder.items.get(i).toString();
-            if(i!=resultOrder.items.size()-1)
-            {
-                items+=" ";
+            if (i != resultOrder.items.size() - 1) {
+                items += " ";
             }
         }
 //        OrderService.sendEvent("OrderCanceled", orderId);
@@ -46,7 +43,7 @@ public class OrderApiController {
         UUID OrderId = UUID.fromString(orderId);
         Order result = OrderService.findOrderById(OrderId);
         List<UUID> items = result.items;
-        if(items == null) {
+        if (items == null) {
             items = new ArrayList<UUID>();
         }
         List<String> itemsAsString = items.stream().map(UUID::toString).collect(Collectors.toList());
@@ -94,11 +91,11 @@ public class OrderApiController {
         data.put("UserID", resultOrder.user_id);
         data.put("OrderID", resultOrder.order_id);
         data.put("Items", resultOrder.items);
-        data.put("TransactionID",transactionId);
+        data.put("TransactionID", transactionId);
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             String data_json = objectMapper.writeValueAsString(data);
-            OrderService.sendEvent("OrderCheckout",data_json);
+            OrderService.sendEvent("OrderCheckout", data_json);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -106,11 +103,9 @@ public class OrderApiController {
         String result = future.get();
         checkoutTransactionMap.remove(transactionId);
         if (result == "Success") {
-            System.out.println("Checkout success");
             OrderService.changePaidStatus(orderIdUUID);
             return result;
         } else {
-            System.out.println("Checkout failed: " + result);
             throw new OrderError(result);
         }
     }
@@ -128,7 +123,7 @@ public class OrderApiController {
         if (!resultOrder.paid) {
             try {
                 String data_json = objectMapper.writeValueAsString(data);
-                OrderService.sendEvent("CancelPaymentFailed",data_json);
+                OrderService.sendEvent("CancelPaymentFailed", data_json);
                 return "Failure";
             } catch (Exception e) {
                 e.printStackTrace();
@@ -137,7 +132,7 @@ public class OrderApiController {
 
         try {
             String data_json = objectMapper.writeValueAsString(data);
-            OrderService.sendEvent("OrderCancelled",data_json);
+            OrderService.sendEvent("OrderCancelled", data_json);
         } catch (Exception e) {
             e.printStackTrace();
         }

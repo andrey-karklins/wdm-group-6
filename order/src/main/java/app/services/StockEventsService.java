@@ -19,13 +19,14 @@ import static app.services.OrderService.sendEvent;
 
 public class StockEventsService {
     private static boolean connected = false;
+
     public static void listen() throws InterruptedException {
         Client client = ClientBuilder.newBuilder().build();
         WebTarget target = client.target("http://stock-service:5000/sse");
         SseEventSource sseEventSource = SseEventSource.target(target).reconnectingEvery(1, TimeUnit.SECONDS).build();
         sseEventSource.register(event -> handler(event.getName(), event.readData(String.class)));
         sseEventSource.open();
-        while(!connected) {
+        while (!connected) {
             Thread.sleep(1000);
         }
     }
@@ -73,7 +74,7 @@ public class StockEventsService {
                     Map<String, Object> data_to_payment = new HashMap<>();
                     data_to_payment.put("transactionID", transactionId);
                     data_to_payment.put("ErrorMsg", errorMsg);
-                    String data_json="";
+                    String data_json = "";
                     try {
                         data_json = objectMapper2.writeValueAsString(data_to_payment);
                     } catch (Exception e) {

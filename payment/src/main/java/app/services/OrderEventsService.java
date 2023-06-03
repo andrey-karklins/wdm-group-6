@@ -9,21 +9,20 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class OrderEventsService {
-    private static boolean connected = false;
     private static final ObjectMapper mapper = new ObjectMapper();
+    private static boolean connected = false;
+
     public static void listen() throws InterruptedException {
         Client client = ClientBuilder.newBuilder().build();
         WebTarget target = client.target("http://order-service:5000/sse");
         SseEventSource sseEventSource = SseEventSource.target(target).reconnectingEvery(1, TimeUnit.SECONDS).build();
         sseEventSource.register(event -> handler(event.getName(), event.readData(String.class)));
         sseEventSource.open();
-        while(!connected) {
+        while (!connected) {
             Thread.sleep(1000);
         }
     }

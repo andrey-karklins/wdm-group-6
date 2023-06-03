@@ -1,9 +1,10 @@
 package app.services;
 
 import app.StockApp;
-import app.models.Item;
 import app.StockError;
-import com.datastax.driver.core.*;
+import app.models.Item;
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.datastax.driver.mapping.annotations.Accessor;
@@ -58,7 +59,7 @@ public class StockService {
 //                Item newItem = new Item("9552eace-06a7-4a5e-a90d-9200063ed94a", 10, 6);
 //                insertItem(newItem);
                 mapper = new MappingManager(session);
-                itemMapper=mapper.mapper(Item.class,"stock_keyspace");
+                itemMapper = mapper.mapper(Item.class, "stock_keyspace");
                 initialized = true;
             } catch (Exception e) {
                 System.out.println("Cassandra is not ready yet, retrying in 5 seconds...");
@@ -69,7 +70,7 @@ public class StockService {
     }
 
     // Here implement functions to interact with Cassandra
-    public Item findItemByID(UUID itemID){
+    public Item findItemByID(UUID itemID) {
 //        session.execute("USE stock_keyspace");
 //        String m2="SELECT * FROM items WHERE item_id = "+itemID;
 //        System.out.println(m2);
@@ -97,7 +98,7 @@ public class StockService {
 //        session.execute(boundStatement);
 
         UUID id = UUID.randomUUID();
-        Item item=new Item(id.toString(),0,price);
+        Item item = new Item(id.toString(), 0, price);
         itemMapper.save(item);
 //        System.out.println(id);
 //        String query = "INSERT INTO items (item_id, stock, price) VALUES (" + id + ",0," + price + ")";
@@ -105,7 +106,8 @@ public class StockService {
 //        session.execute(query);
         return id;
     }
-    public boolean AddStock(UUID itemID,int amount){
+
+    public boolean AddStock(UUID itemID, int amount) {
         Item item = findItemByID(itemID);
 //        String query = "UPDATE items SET stock = ? WHERE item_id = ?";
 //        PreparedStatement preparedStatement = session.prepare(query);
@@ -115,13 +117,14 @@ public class StockService {
         itemMapper.save(item);
         return true;
     }
-    public boolean SubStock(UUID itemID,int amount){
+
+    public boolean SubStock(UUID itemID, int amount) {
         Item item = findItemByID(itemID);
         int original_stock = item.stock;
-        if (original_stock<amount){
+        if (original_stock < amount) {
             throw new StockError("Not enough stock");
         }
-        item.stock-=amount;
+        item.stock -= amount;
         itemMapper.save(item);
 //        String query = "UPDATE items SET stock = ? WHERE item_id = ?";
 //        PreparedStatement preparedStatement = session.prepare(query);
@@ -129,6 +132,7 @@ public class StockService {
 //        session.execute(boundStatement);
         return true;
     }
+
     @Accessor
     public interface ItemAccessor {
         @Query("SELECT * FROM items WHERE item_id = :item_id")

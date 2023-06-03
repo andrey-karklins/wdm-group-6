@@ -14,6 +14,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class PaymentApp {
     public static ConcurrentLinkedQueue<SseClient> clients = new ConcurrentLinkedQueue<>();
+
     public static void main(String[] args) {
         var app = Javalin.create(/*config*/);
         var api = new PaymentApiController();

@@ -27,12 +27,10 @@ public class OrderService {
     static Session session = null;
     static MappingManager mapper = null;
     static boolean initialized = false;
-    private static String keyspace = "order_keyspace";
-
-    private final String stockUrl = "http://stock-service:5000";
     static ConcurrentHashMap<String, Integer> priceMap = new ConcurrentHashMap<>();
-
     static Mapper<Order> orderMapper;
+    private static String keyspace = "order_keyspace";
+    private final String stockUrl = "http://stock-service:5000";
 
     public static void init() throws InterruptedException {
         System.out.println("Initializing connection to Cassandra...");
@@ -92,7 +90,7 @@ public class OrderService {
 
     public static boolean cancelOrder(UUID orderId) {
         OrderAccessor orderAccessor = mapper.createAccessor(OrderAccessor.class);
-        Order order =  orderAccessor.getOrderById(orderId);
+        Order order = orderAccessor.getOrderById(orderId);
         orderMapper.delete(order);
         return true;
     }
@@ -116,13 +114,43 @@ public class OrderService {
         data_to_stock.put("Items", items);
         data_to_stock.put("TotalCost", total_cost);
         ObjectMapper objectMapper_to_payment = new ObjectMapper();
-        String data_json="";
+        String data_json = "";
         try {
             data_json = objectMapper_to_payment.writeValueAsString(data_to_stock);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        sendEvent("OrderCancelled",data_json);
+        sendEvent("OrderCancelled", data_json);
+    }
+
+    /**
+     * Finds and returns an order object given an unique orderId
+     *
+     * @param orderId the order id
+     * @return the order object from the database
+     */
+    public static Order findOrderById(UUID orderId) {
+        OrderAccessor orderAccessor = mapper.createAccessor(OrderAccessor.class);
+        return orderAccessor.getOrderById(orderId);
+    }
+
+    /**
+     * Changes the status of the order
+     *
+     * @param orderId the order id
+     * @return true if the change went through
+     */
+    public static boolean changePaidStatus(UUID orderId) {
+        boolean status = false;
+        Order order = findOrderById(orderId);
+
+        if (order != null) {
+            order.paid = !order.paid;
+            orderMapper.save(order);
+            status = true;
+
+        }
+        return status;
     }
 
     public UUID createOrder(UUID userId) {
@@ -135,10 +163,11 @@ public class OrderService {
 
     /**
      * Sends a request to the stockService to find the item, given the UUID
+     *
      * @param itemId the UUID of the item
      * @return the JSON representation of the item
      */
-    private JsonNode requestItem(UUID itemId)  {
+    private JsonNode requestItem(UUID itemId) {
         // Build the request URL
         String url = stockUrl + "/find/" + itemId.toString();
         try (CloseableHttpClient client = HttpClients.createDefault()) {
@@ -152,46 +181,11 @@ public class OrderService {
                 // System.err.println("Invalid JSON response: " + response);
                 return null;
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
         return null;
-    }
-
-    /**
-     * Finds and returns an order object given an unique orderId
-     * @param orderId the order id
-     * @return the order object from the database
-     */
-    public static Order findOrderById(UUID orderId) {
-        OrderAccessor orderAccessor = mapper.createAccessor(OrderAccessor.class);
-        return orderAccessor.getOrderById(orderId);
-    }
-
-    /**
-     * Changes the status of the order
-     * @param orderId the order id
-     * @return true if the change went through
-     */
-    public static boolean changePaidStatus(UUID orderId) {
-        boolean status = false;
-        Order order =  findOrderById(orderId);
-
-        if (order != null) {
-            order.paid = !order.paid;
-            orderMapper.save(order);
-            status = true;
-
-        }
-        return status;
-    }
-
-    @Accessor
-    public interface OrderAccessor {
-        @Query("SELECT * FROM orders WHERE order_id = :order_id")
-        Order getOrderById(@Param("order_id") UUID order_id);
     }
 
     //TODO Retrieve the price from the stock microservice
@@ -233,5 +227,11 @@ public class OrderService {
 //        order.total_cost -= itemPrice;
         orderMapper.save(order);
         return true;
+    }
+
+    @Accessor
+    public interface OrderAccessor {
+        @Query("SELECT * FROM orders WHERE order_id = :order_id")
+        Order getOrderById(@Param("order_id") UUID order_id);
     }
 }

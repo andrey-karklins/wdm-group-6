@@ -95,9 +95,9 @@ public class PaymentService {
         return user_id;
     }
 
-    public static User findUserById(UUID user_id)  {
-            UserAccessor userAccessor = mapper.createAccessor(UserAccessor.class);
-            return userAccessor.getUserById(user_id);
+    public static User findUserById(UUID user_id) {
+        UserAccessor userAccessor = mapper.createAccessor(UserAccessor.class);
+        return userAccessor.getUserById(user_id);
     }
 
     @Accessor

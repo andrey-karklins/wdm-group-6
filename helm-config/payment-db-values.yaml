@@ -13,4 +13,4 @@ service:
   name: payment-db
   type: ClusterIP
   port: 9042
-  annotations: {}
+  annotations: { }
