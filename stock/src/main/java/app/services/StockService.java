@@ -119,7 +119,7 @@ public class StockService {
         Item item = findItemByID(itemID);
         int original_stock = item.stock;
         if (original_stock<amount){
-            throw new StockError("stock not enough");
+            throw new StockError("Not enough stock");
         }
         item.stock-=amount;
         itemMapper.save(item);

@@ -51,10 +51,8 @@ public class StockEventsService {
             case "StockSubtractFailed":
                 ObjectMapper objectMapper = new ObjectMapper();
                 try {
-                    System.out.println(data);
                     JsonNode jsonNode = objectMapper.readTree(data);
                     UUID failedOrderId = UUID.fromString(jsonNode.get("OrderID").asText());
-                    System.out.println(failedOrderId);
                     UUID transactionId = UUID.fromString(jsonNode.get("TransactionID").asText());
                     String errorMsg = jsonNode.get("ErrorMsg").asText();
                     OrderApiController.checkoutTransactionMap.get(transactionId).complete(errorMsg);
@@ -66,7 +64,6 @@ public class StockEventsService {
             case "StockReturnFailed":
                 ObjectMapper objectMapper2 = new ObjectMapper();
                 try {
-                    System.out.println(data);
                     JsonNode jsonNode = objectMapper2.readTree(data);
                     UUID failedOrderId = UUID.fromString(jsonNode.get("OrderID").asText());
                     UUID transactionId = UUID.fromString(jsonNode.get("TransactionID").asText());

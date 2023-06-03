@@ -54,6 +54,7 @@ public class PaymentEventsService {
         List<String> items = (List<String>) data_map.get("Items");
         String orderID = (String) data_map.get("OrderID");
         String transactionID = (String) data_map.get("TransactionID");
+        String errorMsg = (String) data_map.get("ErrorMsg");
         StockService stockservice = new StockService();
         List<UUID> items_uuid = new ArrayList<>();;
         for (String s:items){
@@ -65,6 +66,7 @@ public class PaymentEventsService {
         failmap.put("OrderID",UUID.fromString(orderID));
         failmap.put("Items",items_uuid);
         failmap.put("TransactionID", UUID.fromString(transactionID));
+        failmap.put("ErrorMsg", errorMsg);
         ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
         String data_json_fail="";
         try {

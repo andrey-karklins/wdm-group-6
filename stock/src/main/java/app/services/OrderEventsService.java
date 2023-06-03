@@ -1,7 +1,6 @@
 package app.services;
 import app.StockError;
 import app.models.Item;
-import com.datastax.driver.core.Row;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -99,11 +98,9 @@ public class OrderEventsService {
         List<String> items = (List<String>) data_map.get("Items");
         String orderID = (String) data_map.get("OrderID");
         String transactionID = (String) data_map.get("TransactionID");
-//        System.out.println("UserID: " + userID);
-//        System.out.println("Items: " + items);
         int total_price = 0;
         StockService stockservice = new StockService();
-        List<UUID> items_uuid = new ArrayList<>();;
+        List<UUID> items_uuid = new ArrayList<>();
         Map<String, Integer> items_map = new HashMap<>();
         for (String s:items){
             items_uuid.add(UUID.fromString(s));
@@ -123,7 +120,7 @@ public class OrderEventsService {
             try {
                 item = stockservice.findItemByID(item_uuid);
             }catch (StockError e){
-                //NOT enough stock for each item in the order
+                //Item does not exist
                 failmap.put("OrderID",UUID.fromString(orderID));
                 failmap.put("Items",items_uuid);
                 failmap.put("TransactionID", UUID.fromString(transactionID));
@@ -137,12 +134,10 @@ public class OrderEventsService {
                     e1.printStackTrace();
                 }
                 StockService.sendEvent("StockSubtractFailed",data_json_fail);
-                throw new IllegalStateException("Stock subtraction failed, aborting.");
+                return;
             }
-
             if(item.stock<amount){
                 //NOT enough stock for each item in the order
-
                 failmap.put("OrderID",UUID.fromString(orderID));
                 failmap.put("Items",items_uuid);
                 failmap.put("TransactionID", UUID.fromString(transactionID));
@@ -156,7 +151,7 @@ public class OrderEventsService {
                     e1.printStackTrace();
                 }
                 StockService.sendEvent("StockSubtractFailed",data_json_fail);
-                throw new IllegalStateException("Stock subtraction failed, aborting.");
+                return;
             }
         }
         // there are enough stock for each item in the order
@@ -222,7 +217,6 @@ public class OrderEventsService {
                     e1.printStackTrace();
                 }
                 StockService.sendEvent("StockSubtractFailed",data_json_fail);
-                throw new IllegalStateException("Stock subtraction failed, aborting.");
             }
             boolean res = stockService.AddStock(UUID.fromString(s),1);
         }

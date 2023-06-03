@@ -15,7 +15,6 @@ public class StockApiController {
         try{
             item= stock_service.findItemByID(uuid);
         }catch(StockError e){
-            System.out.println(e.getMessage());
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("error", e.getMessage());
             throw new StockError(e.getMessage());

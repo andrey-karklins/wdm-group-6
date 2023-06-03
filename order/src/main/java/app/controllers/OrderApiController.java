@@ -1,5 +1,6 @@
 package app.controllers;
 
+import app.OrderError;
 import app.services.OrderService;
 import app.models.Order;
 import com.fasterxml.jackson.databind.ObjectMapper; // import jackson library
@@ -61,7 +62,6 @@ public class OrderApiController {
 
 
     public String addItem(String orderId, String itemId) {
-        OrderService.sendEvent("ifItemExists",orderId+" "+itemId);
         UUID orderIdUUID = UUID.fromString(orderId);
         UUID itemIdUUID = UUID.fromString(itemId);
         boolean result = orderService.addItemToOrder(orderIdUUID, itemIdUUID);
@@ -103,8 +103,16 @@ public class OrderApiController {
             e.printStackTrace();
         }
         //todo: edge case: it was already paid by other transaction
-        boolean result = OrderService.changePaidStatus(orderIdUUID);
-        return future.get(); //result ? "Success" : "Failure";
+        String result = future.get();
+        checkoutTransactionMap.remove(transactionId);
+        if (result == "Success") {
+            System.out.println("Checkout success");
+            OrderService.changePaidStatus(orderIdUUID);
+            return result;
+        } else {
+            System.out.println("Checkout failed: " + result);
+            throw new OrderError(result);
+        }
     }
 
     public String cancelPayment(String orderId) {
