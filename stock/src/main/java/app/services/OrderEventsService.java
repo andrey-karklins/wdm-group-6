@@ -1,4 +1,5 @@
 package app.services;
+import app.StockError;
 import app.models.Item;
 import com.datastax.driver.core.Row;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -116,11 +117,32 @@ public class OrderEventsService {
         for (Map.Entry<String, Integer> entry : items_map.entrySet()) {
             UUID item_uuid = UUID.fromString(entry.getKey());
             Integer amount = entry.getValue();
+            Map<String, Object> failmap = new HashMap<>();
 //            System.out.println("Key: " + item_uuid + ", Value: " + amount);
-            Item item = stockservice.findItemByID(item_uuid);
+            Item item = null;
+            try {
+                item = stockservice.findItemByID(item_uuid);
+            }catch (StockError e){
+                //NOT enough stock for each item in the order
+                failmap.put("OrderID",UUID.fromString(orderID));
+                failmap.put("Items",items_uuid);
+                failmap.put("TransactionID", UUID.fromString(transactionID));
+                String errorMsg="NO such item in stock!";
+                failmap.put("ErrorMsg",errorMsg);
+                ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
+                String data_json_fail="";
+                try {
+                    data_json_fail = objectMapper_to_user_fail.writeValueAsString(failmap);
+                }catch(Exception e1) {
+                    e1.printStackTrace();
+                }
+                StockService.sendEvent("StockSubtractFailed",data_json_fail);
+                throw new IllegalStateException("Stock subtraction failed, aborting.");
+            }
+
             if(item.stock<amount){
                 //NOT enough stock for each item in the order
-                Map<String, Object> failmap = new HashMap<>();
+
                 failmap.put("OrderID",UUID.fromString(orderID));
                 failmap.put("Items",items_uuid);
                 failmap.put("TransactionID", UUID.fromString(transactionID));
@@ -165,6 +187,7 @@ public class OrderEventsService {
     {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<Object, Object> data_map = new HashMap<>();
+        Map<String, Object> failmap = new HashMap<>();
         try {
             data_map = objectMapper.readValue(data, Map.class);
         }catch (IOException e) {
@@ -175,17 +198,39 @@ public class OrderEventsService {
         String userID = (String) data_map.get("UserID");
         Integer cost = (Integer) data_map.get("TotalCost");
         String transactionID = (String) data_map.get("TransactionID");
+        int total_cost=0;
         List<UUID> items_uuid = new ArrayList<>();
         StockService stockService=new StockService();
         for(String s:items){
+            Item item = null;
             items_uuid.add(UUID.fromString(s));
+            try{
+                item = stockService.findItemByID(UUID.fromString(s));
+                total_cost+= item.price;
+            }catch (StockError e)
+            {
+                failmap.put("OrderID",UUID.fromString(orderID));
+                failmap.put("Items",items_uuid);
+                failmap.put("TransactionID", UUID.fromString(transactionID));
+                String errorMsg="NO such item in stock!";
+                failmap.put("ErrorMsg",errorMsg);
+                ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
+                String data_json_fail="";
+                try {
+                    data_json_fail = objectMapper_to_user_fail.writeValueAsString(failmap);
+                }catch(Exception e1) {
+                    e1.printStackTrace();
+                }
+                StockService.sendEvent("StockSubtractFailed",data_json_fail);
+                throw new IllegalStateException("Stock subtraction failed, aborting.");
+            }
             boolean res = stockService.AddStock(UUID.fromString(s),1);
         }
         Map<String, Object> data_to_payment = new HashMap<>();
         data_to_payment.put("UserID", UUID.fromString(userID));
         data_to_payment.put("OrderID", UUID.fromString(orderID));
         data_to_payment.put("Items", items_uuid);
-        data_to_payment.put("TotalCost", cost);
+        data_to_payment.put("TotalCost", total_cost);
         data_to_payment.put("TransactionID", UUID.fromString(transactionID));
         ObjectMapper objectMapper_to_payment = new ObjectMapper();
         String data_json="";
