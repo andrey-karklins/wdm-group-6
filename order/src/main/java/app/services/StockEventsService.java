@@ -85,9 +85,7 @@ public class StockEventsService {
                     e.printStackTrace();
                 }
                 break;
-
             default:
-                System.out.println("Unknown event: " + event);
         }
     }
 }

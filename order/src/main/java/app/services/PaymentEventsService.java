@@ -74,7 +74,6 @@ public class PaymentEventsService {
                 break;
 
             default:
-                System.out.println("Unknown event: " + event);
         }
     }
 }

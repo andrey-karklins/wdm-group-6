@@ -65,7 +65,6 @@ public class StockEventsService {
                 break;
 
             default:
-                System.out.println("Unknown event: " + event);
         }
     }
 }

@@ -71,18 +71,7 @@ public class StockService {
 
     // Here implement functions to interact with Cassandra
     public Item findItemByID(UUID itemID) {
-//        session.execute("USE stock_keyspace");
-//        String m2="SELECT * FROM items WHERE item_id = "+itemID;
-//        System.out.println(m2);
-//        ResultSet resultSet = session.execute("SELECT * FROM items WHERE item_id = ?", itemID);
-//        String query = "SELECT * FROM items WHERE item_id = ?";
-//        PreparedStatement preparedStatement = session.prepare(query);
-//        BoundStatement boundStatement = preparedStatement.bind(itemID);
-//        ResultSet resultSet=session.execute(boundStatement);
-//        System.out.println(m2);
-//        System.out.println("Item ID data type: " + itemID.getClass().getName());
         ItemAccessor itemAccessor = mapper.createAccessor(ItemAccessor.class);
-//        Row row = resultSet.one();
 
         Item item = itemAccessor.getItemById(itemID);
         if (item == null) {
@@ -92,27 +81,14 @@ public class StockService {
     }
 
     public UUID CreateItem(int price) {
-//        PreparedStatement preparedStatement = session.prepare(query);
-//        Bind the values to the query
-//        BoundStatement boundStatement = preparedStatement.bind(id, 0, price);
-//        session.execute(boundStatement);
-
         UUID id = UUID.randomUUID();
         Item item = new Item(id.toString(), 0, price);
         itemMapper.save(item);
-//        System.out.println(id);
-//        String query = "INSERT INTO items (item_id, stock, price) VALUES (" + id + ",0," + price + ")";
-////        System.out.println(query);
-//        session.execute(query);
         return id;
     }
 
     public boolean AddStock(UUID itemID, int amount) {
         Item item = findItemByID(itemID);
-//        String query = "UPDATE items SET stock = ? WHERE item_id = ?";
-//        PreparedStatement preparedStatement = session.prepare(query);
-//        BoundStatement boundStatement = preparedStatement.bind(new_stock, itemID);
-//        session.execute(boundStatement);
         item.stock += amount;
         itemMapper.save(item);
         return true;
@@ -126,10 +102,6 @@ public class StockService {
         }
         item.stock -= amount;
         itemMapper.save(item);
-//        String query = "UPDATE items SET stock = ? WHERE item_id = ?";
-//        PreparedStatement preparedStatement = session.prepare(query);
-//        BoundStatement boundStatement = preparedStatement.bind(new_stock, itemID);
-//        session.execute(boundStatement);
         return true;
     }
 

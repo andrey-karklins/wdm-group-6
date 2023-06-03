@@ -42,7 +42,6 @@ public class OrderEventsService {
                 HandlerOrderCancelled(data);
                 break;
             default:
-                System.out.println("Unknown event: " + event);
         }
     }
 

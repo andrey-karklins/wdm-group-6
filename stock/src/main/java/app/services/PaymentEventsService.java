@@ -39,7 +39,6 @@ public class PaymentEventsService {
                 HandlerReturnFundsFailed(data);
                 break;
             default:
-                System.out.println("Unknown event: " + event);
         }
     }
 

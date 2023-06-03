@@ -49,7 +49,6 @@ public class OrderEventsService {
                 }
                 break;
             default:
-                System.out.println("Unknown event: " + event);
         }
     }
 }
