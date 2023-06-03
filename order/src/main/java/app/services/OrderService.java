@@ -29,6 +29,8 @@ public class OrderService {
     static boolean initialized = false;
     static ConcurrentHashMap<String, Integer> priceMap = new ConcurrentHashMap<>();
     static Mapper<Order> orderMapper;
+
+    static OrderAccessor orderAccessor;
     private static String keyspace = "order_keyspace";
     private final String stockUrl = "http://stock-service:5000";
 
@@ -46,6 +48,7 @@ public class OrderService {
 
                 mapper = new MappingManager(session);
                 orderMapper = mapper.mapper(Order.class, keyspace);
+                orderAccessor = mapper.createAccessor(OrderAccessor.class);
                 initialized = true;
             } catch (Exception e) {
                 System.out.println("Cassandra is not ready yet, retrying in 5 seconds...");
@@ -89,7 +92,6 @@ public class OrderService {
     }
 
     public static boolean removeOrder(UUID orderId) {
-        OrderAccessor orderAccessor = mapper.createAccessor(OrderAccessor.class);
         Order order = orderAccessor.getOrderById(orderId);
         orderMapper.delete(order);
         return true;
@@ -130,7 +132,6 @@ public class OrderService {
      * @return the order object from the database
      */
     public static Order findOrderById(UUID orderId) {
-        OrderAccessor orderAccessor = mapper.createAccessor(OrderAccessor.class);
         return orderAccessor.getOrderById(orderId);
     }
 

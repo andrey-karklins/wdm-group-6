@@ -23,6 +23,8 @@ public class PaymentService {
 
     static Mapper<User> mapperUser = null;
 
+    static UserAccessor userAccessor = null;
+
     public static void sendEvent(String event, String data) {
         PaymentApp.clients.forEach(client -> client.sendEvent(event, data));
     }
@@ -58,6 +60,7 @@ public class PaymentService {
                 useKeyspace(keyspace);
                 createTable("users");
                 mapperUser = mapper.mapper(User.class, keyspace);
+                userAccessor = mapper.createAccessor(UserAccessor.class);
 
             } catch (Exception e) {
                 System.out.println("Cassandra is not ready yet, retrying in 5 seconds...");
@@ -96,7 +99,6 @@ public class PaymentService {
     }
 
     public static User findUserById(UUID user_id) {
-        UserAccessor userAccessor = mapper.createAccessor(UserAccessor.class);
         return userAccessor.getUserById(user_id);
     }
 

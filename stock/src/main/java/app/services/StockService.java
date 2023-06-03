@@ -18,6 +18,7 @@ public class StockService {
     static Session session = null;
     static MappingManager mapper = null;
     static Mapper<Item> itemMapper;
+    static ItemAccessor itemAccessor = null;
     static boolean initialized = false;
 
     public static void sendEvent(String event, String data) {
@@ -60,6 +61,7 @@ public class StockService {
 //                insertItem(newItem);
                 mapper = new MappingManager(session);
                 itemMapper = mapper.mapper(Item.class, "stock_keyspace");
+                itemAccessor = mapper.createAccessor(ItemAccessor.class);
                 initialized = true;
             } catch (Exception e) {
                 System.out.println("Cassandra is not ready yet, retrying in 5 seconds...");
@@ -71,8 +73,6 @@ public class StockService {
 
     // Here implement functions to interact with Cassandra
     public Item findItemByID(UUID itemID) {
-        ItemAccessor itemAccessor = mapper.createAccessor(ItemAccessor.class);
-
         Item item = itemAccessor.getItemById(itemID);
         if (item == null) {
             throw new StockError("can't find such item in stock");
