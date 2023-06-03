@@ -33,11 +33,6 @@ public class PaymentEventsService {
                 System.out.println("Connected to " + data);
                 break;
             // Below events to be handled
-            // ... (TODO)
-
-            case "OrderCanceled":
-                OrderService.cancelOrder(UUID.fromString(data));
-                break;
             case "PaymentSucceeded":
                 OrderService.changePaidStatus(UUID.fromString(data));
                 break;
@@ -66,7 +61,7 @@ public class PaymentEventsService {
                     JsonNode jsonNode = objectMapper2.readTree(data);
                     UUID userId = UUID.fromString(jsonNode.get("UserID").asText());
                     UUID orderId = UUID.fromString(jsonNode.get("OrderID").asText());
-                    UUID transactionId = UUID.fromString(jsonNode.get("transactionID").asText());
+                    UUID transactionId = UUID.fromString(jsonNode.get("TransactionID").asText());
                     OrderService.cancelOrder(orderId, userId, transactionId);
                 } catch (IOException e) {
                     e.printStackTrace();

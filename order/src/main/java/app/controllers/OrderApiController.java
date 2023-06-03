@@ -23,7 +23,7 @@ public class OrderApiController {
         return res;
     }
 
-    public String cancelOrder(String orderId) {
+    public String removeOrder(String orderId) {
         Order resultOrder = OrderService.findOrderById(UUID.fromString(orderId));
         String items = "";
         for (int i = 0; i < resultOrder.items.size(); i++) {
@@ -35,7 +35,7 @@ public class OrderApiController {
 //        OrderService.sendEvent("OrderCanceled", orderId);
 //        OrderService.sendEvent("OrderFailed", items);
         UUID orderIdUUID = UUID.fromString(orderId);
-        boolean result = OrderService.cancelOrder(orderIdUUID);
+        boolean result = OrderService.removeOrder(orderIdUUID);
         return result ? "Success" : "Failure";
     }
 
@@ -112,30 +112,6 @@ public class OrderApiController {
 
     public String cancelPayment(String orderId) {
         UUID orderIdUUID = UUID.fromString(orderId);
-        Order resultOrder = OrderService.findOrderById(UUID.fromString(orderId));
-        Map<String, Object> data = new HashMap<>();
-        data.put("UserID", resultOrder.user_id);
-        data.put("OrderID", resultOrder.order_id);
-        data.put("Items", resultOrder.items);
-        data.put("TotalCost", resultOrder.total_cost);
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        if (!resultOrder.paid) {
-            try {
-                String data_json = objectMapper.writeValueAsString(data);
-                OrderService.sendEvent("CancelPaymentFailed", data_json);
-                return "Failure";
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        try {
-            String data_json = objectMapper.writeValueAsString(data);
-            OrderService.sendEvent("OrderCancelled", data_json);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         boolean result = OrderService.changePaidStatus(orderIdUUID);
         return result ? "Success" : "Failure";
     }

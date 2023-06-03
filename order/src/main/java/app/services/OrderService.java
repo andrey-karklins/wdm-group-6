@@ -88,7 +88,7 @@ public class OrderService {
         }
     }
 
-    public static boolean cancelOrder(UUID orderId) {
+    public static boolean removeOrder(UUID orderId) {
         OrderAccessor orderAccessor = mapper.createAccessor(OrderAccessor.class);
         Order order = orderAccessor.getOrderById(orderId);
         orderMapper.delete(order);
@@ -110,7 +110,7 @@ public class OrderService {
         Map<String, Object> data_to_stock = new HashMap<>();
         data_to_stock.put("OrderID", UUID.fromString(orderIdString));
         data_to_stock.put("UserID", UUID.fromString(userIdString));
-        data_to_stock.put("transactionID", UUID.fromString(transactionIdSting));
+        data_to_stock.put("TransactionID", UUID.fromString(transactionIdSting));
         data_to_stock.put("Items", items);
         data_to_stock.put("TotalCost", total_cost);
         ObjectMapper objectMapper_to_payment = new ObjectMapper();

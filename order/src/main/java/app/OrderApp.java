@@ -19,7 +19,7 @@ public class OrderApp {
         var api = new OrderApiController();
         app.routes(() -> {
             post("create/{user_id}", ctx -> ctx.json(api.createOrder(ctx.pathParam("user_id"))));
-            delete("remove/{order_id}", ctx -> ctx.json(api.cancelOrder(ctx.pathParam("order_id"))));
+            delete("remove/{order_id}", ctx -> ctx.json(api.removeOrder(ctx.pathParam("order_id"))));
             get("find/{order_id}", ctx -> ctx.json(api.findOrder(ctx.pathParam("order_id"))));
             post("addItem/{order_id}/{item_id}", ctx -> ctx.json(api.addItem(ctx.pathParam("order_id"), ctx.pathParam("item_id"))));
             delete("removeItem/{order_id}/{item_id}", ctx -> ctx.json(api.removeItem(ctx.pathParam("order_id"), ctx.pathParam("item_id"))));
