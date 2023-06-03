@@ -45,47 +45,6 @@ public class OrderEventsService {
         }
     }
 
-//    private static void HandlerAddItem(String data){
-//        String[] part =data.split(" ");
-//        String orderId =part[0];
-//        String itemId =part[1];
-//        UUID itemid=UUID.fromString(itemId);
-//        StockService stockervice = new StockService();
-//        Item item = stockervice.findItemByID(itemid);
-//        int item_price = 0;
-//        //cant find the item
-//        if( result ==  null)
-//            item_price=-2;
-//        //there is enough stock of the item
-//        if (result!=null){
-//            item_price = result.getInt("price");
-//            //Row sub = stockervice.SubStock(itemid,1);
-//        }
-////        System.out.println(item_price);
-//        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+ item_price);
-//    }
-
-    //    private static void HandlerRemoveItem(String data){
-//        String[] part = data.split(" ");
-//        String orderId = part[0];
-//        String itemId = part[1];
-//        UUID itemid=UUID.fromString(itemId);
-//        StockService stockservice = new StockService();
-//        Row result = stockservice.findItemByID(itemid);
-//        int item_price = 0;
-//        //cant find the item
-//        if( result ==  null)
-//            item_price = -2;
-//
-//        //there is enough stock of the item
-//        if (result!=null){
-//            item_price = result.getInt("price");
-//            //Row subtract = stockservice.AddStock(itemid,1);
-//        }
-////        System.out.println(item_price);
-//        StockService.sendEvent("ItemStock",orderId+" "+itemId+" "+ item_price);
-//
-//    }
     private static void HandlerOrderCheckout(String data) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<Object, Object> data_map = new HashMap<>();
@@ -98,70 +57,38 @@ public class OrderEventsService {
         List<String> items = (List<String>) data_map.get("Items");
         String orderID = (String) data_map.get("OrderID");
         String transactionID = (String) data_map.get("TransactionID");
-        int total_price = 0;
+        int total_price;
         StockService stockservice = new StockService();
         List<UUID> items_uuid = new ArrayList<>();
-        Map<String, Integer> items_map = new HashMap<>();
+        HashMap<UUID, Integer> items_map = new HashMap<>();
         for (String s : items) {
-            items_uuid.add(UUID.fromString(s));
-            if (!items_map.containsKey(s)) {
-                items_map.put(s, 1);
+            UUID key = UUID.fromString(s);
+            items_uuid.add(key);
+            if (!items_map.containsKey(key)) {
+                items_map.put(key, 1);
             } else {
-                items_map.put(s, items_map.get(s) + 1);
+                items_map.put(key, items_map.get(key) + 1);
             }
         }
-        // see if there are enough stock for each item in the order
-        for (Map.Entry<String, Integer> entry : items_map.entrySet()) {
-            UUID item_uuid = UUID.fromString(entry.getKey());
-            Integer amount = entry.getValue();
+        try {
+            total_price = stockservice.subStock(items_map);
+        } catch (StockError e) {
             Map<String, Object> failmap = new HashMap<>();
-//            System.out.println("Key: " + item_uuid + ", Value: " + amount);
-            Item item = null;
+            //Item does not exist
+            failmap.put("OrderID", UUID.fromString(orderID));
+            failmap.put("Items", items_uuid);
+            failmap.put("TransactionID", UUID.fromString(transactionID));
+            String errorMsg = "NO such item in stock!";
+            failmap.put("ErrorMsg", errorMsg);
+            ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
+            String data_json_fail = "";
             try {
-                item = stockservice.findItemByID(item_uuid);
-            } catch (StockError e) {
-                //Item does not exist
-                failmap.put("OrderID", UUID.fromString(orderID));
-                failmap.put("Items", items_uuid);
-                failmap.put("TransactionID", UUID.fromString(transactionID));
-                String errorMsg = "NO such item in stock!";
-                failmap.put("ErrorMsg", errorMsg);
-                ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
-                String data_json_fail = "";
-                try {
-                    data_json_fail = objectMapper_to_user_fail.writeValueAsString(failmap);
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                }
-                StockService.sendEvent("StockSubtractFailed", data_json_fail);
-                return;
+                data_json_fail = objectMapper_to_user_fail.writeValueAsString(failmap);
+            } catch (Exception e1) {
+                e1.printStackTrace();
             }
-            if (item.stock < amount) {
-                //NOT enough stock for each item in the order
-                failmap.put("OrderID", UUID.fromString(orderID));
-                failmap.put("Items", items_uuid);
-                failmap.put("TransactionID", UUID.fromString(transactionID));
-                String errorMsg = "NOT enough stock";
-                failmap.put("ErrorMsg", errorMsg);
-                ObjectMapper objectMapper_to_user_fail = new ObjectMapper();
-                String data_json_fail = "";
-                try {
-                    data_json_fail = objectMapper_to_user_fail.writeValueAsString(failmap);
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                }
-                StockService.sendEvent("StockSubtractFailed", data_json_fail);
-                return;
-            }
-        }
-        // there are enough stock for each item in the order
-        for (Map.Entry<String, Integer> entry : items_map.entrySet()) {
-            UUID item_uuid = UUID.fromString(entry.getKey());
-            Integer amount = entry.getValue();
-            Item result = stockservice.findItemByID(item_uuid);
-            // subtract the stock
-            boolean subtract = stockservice.SubStock(item_uuid, amount);
-            total_price += result.price;
+            StockService.sendEvent("StockSubtractFailed", data_json_fail);
+            return;
         }
         Map<String, Object> data_to_payment = new HashMap<>();
         data_to_payment.put("UserID", UUID.fromString(userID));

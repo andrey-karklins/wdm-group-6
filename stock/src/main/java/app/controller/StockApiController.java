@@ -29,8 +29,8 @@ public class StockApiController {
 
     public String subtract(String itemId, int amount) {
         UUID id = UUID.fromString(itemId);
-        boolean res = stock_service.SubStock(id, amount);
-        return res ? "Success" : "Failure";
+        stock_service.subOneStock(id, amount);
+        return "Success";
     }
 
 

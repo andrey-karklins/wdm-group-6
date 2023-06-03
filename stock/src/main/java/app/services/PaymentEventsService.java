@@ -90,10 +90,9 @@ public class PaymentEventsService {
         String transactionID = (String) data_map.get("TransactionID");
         StockService stockservice = new StockService();
         List<UUID> items_uuid = new ArrayList<>();
-        ;
         for (String s : items) {
             items_uuid.add(UUID.fromString(s));
-            boolean result = stockservice.SubStock(UUID.fromString(s), 1);
+            stockservice.subOneStock(UUID.fromString(s), 1);
         }
         //send failed event to OrderService
         Map<String, Object> failmap = new HashMap<>();

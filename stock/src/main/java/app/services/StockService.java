@@ -4,6 +4,8 @@ import app.StockApp;
 import app.StockError;
 import app.models.Item;
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
@@ -11,6 +13,7 @@ import com.datastax.driver.mapping.annotations.Accessor;
 import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
 
+import java.util.HashMap;
 import java.util.UUID;
 
 public class StockService {
@@ -20,6 +23,8 @@ public class StockService {
     static Mapper<Item> itemMapper;
     static ItemAccessor itemAccessor = null;
     static boolean initialized = false;
+
+    static PreparedStatement updateStock = null;
 
     public static void sendEvent(String event, String data) {
         StockApp.clients.forEach(client -> client.sendEvent(event, data));
@@ -62,9 +67,11 @@ public class StockService {
                 mapper = new MappingManager(session);
                 itemMapper = mapper.mapper(Item.class, "stock_keyspace");
                 itemAccessor = mapper.createAccessor(ItemAccessor.class);
+                updateStock = session.prepare("UPDATE items SET stock = ? WHERE item_id = ? IF stock = ?");
                 initialized = true;
             } catch (Exception e) {
                 System.out.println("Cassandra is not ready yet, retrying in 5 seconds...");
+                e.printStackTrace();
                 Thread.sleep(5000);
             }
         }
@@ -88,21 +95,46 @@ public class StockService {
     }
 
     public boolean AddStock(UUID itemID, int amount) {
-        Item item = findItemByID(itemID);
-        item.stock += amount;
-        itemMapper.save(item);
+        boolean success = false;
+        while (!success) {
+            Item i = itemAccessor.getItemById(itemID);
+            ResultSet res = session.execute(updateStock.bind(i.stock + amount, itemID, i.stock));
+            success = res.wasApplied();
+        }
         return true;
     }
 
-    public boolean SubStock(UUID itemID, int amount) {
-        Item item = findItemByID(itemID);
-        int original_stock = item.stock;
-        if (original_stock < amount) {
+    public int subOneStock(UUID itemID, int amount) {
+        boolean success = false;
+        int price = 0;
+        while (!success) {
+            price = 0;
+            Item i = itemAccessor.getItemById(itemID);
+            if (i.stock < amount) {
+                throw new StockError("Not enough stock");
+            }
+            ResultSet res = session.execute(updateStock.bind(i.stock - amount, itemID, i.stock));
+            success = res.wasApplied();
+            price = i.price * amount;
+        }
+        return price;
+    }
+
+    public int subStock(HashMap<UUID, Integer> items) {
+        HashMap<UUID, Integer> executed = new HashMap<>();
+        int totalPrice = 0;
+        try {
+            for (UUID k : items.keySet()) {
+                totalPrice += subOneStock(k, items.get(k));
+                executed.put(k, items.get(k));
+            }
+        } catch (Exception e) {
+            for (UUID k : executed.keySet()) {
+                AddStock(k, executed.get(k));
+            }
             throw new StockError("Not enough stock");
         }
-        item.stock -= amount;
-        itemMapper.save(item);
-        return true;
+        return totalPrice;
     }
 
     @Accessor
