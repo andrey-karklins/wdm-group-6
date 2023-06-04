@@ -35,9 +35,11 @@ public class OrderEventsService {
                 break;
             case "OrderCancelledFailed":
                 try {
+                    //Parsing the JSON response from the data
                     JsonNode responseJSON = mapper.readTree(data);
                     UUID transactionID = UUID.fromString(responseJSON.get("TransactionID").asText());
                     String errorMsg = responseJSON.get("ErrorMsg").asText();
+                    //Complete the CompletableFuture started, marking it as failed.
                     PaymentApiController.transactionMap.get(transactionID).complete(errorMsg);
 
                 } catch (JsonProcessingException e) {

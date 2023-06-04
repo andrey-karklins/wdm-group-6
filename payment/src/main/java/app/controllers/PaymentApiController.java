@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +28,17 @@ public class PaymentApiController {
     private static final ObjectMapper mapper = new ObjectMapper();
     private final String orderUrl = "http://order-service:5000";
 
+
+    /**
+     * Returns funds back to the user. If method fails, the event ReturnFundsFailed is sent to reverse operations
+     * in the other microservices. Completes the CompletableFuture started by calling the endpoint cancel.
+     * @param userID the UUID of the user
+     * @param orderID the UUID of the order
+     * @param transactionID the UUID of the transaction
+     * @param totalCost the total cost of the order
+     * @param items the list of items in the order
+     * @throws JsonProcessingException
+     */
     public static void returnFunds(UUID userID, UUID orderID, UUID transactionID, int totalCost, List<UUID> items) throws JsonProcessingException {
         try {
             PaymentService.addFunds(userID, totalCost);
@@ -44,6 +56,16 @@ public class PaymentApiController {
 
     }
 
+    /**
+     * Method used to subtract the funds of a user, when the checkout endpoint is called.
+     * If method fails, the event FundsSubtractFailed is sent to reverse operations
+     * @param userID the UUID of the user
+     * @param orderID the UUID of the order
+     * @param transactionID the UUID of the transaction
+     * @param totalCost the total cost of the order
+     * @param items the list of items in the order
+     * @throws JsonProcessingException
+     */
     public static void subtractFunds(UUID userID, UUID orderID, UUID transactionID, int totalCost, List<UUID> items) throws JsonProcessingException {
         try {
             User user = PaymentService.findUserById(userID);
@@ -61,7 +83,7 @@ public class PaymentApiController {
             PaymentService.sendEvent("FundsSubtracted", mapper.writeValueAsString(eventData));
 
         } catch (Exception e) {
-            String err = "Substracting funds failed due to " + e;
+            String err = "Subtracting funds failed due to " + e;
             Map<String, Object> eventData = new HashMap<>();
             eventData.put("OrderID", orderID);
             eventData.put("TransactionID", transactionID);
@@ -71,50 +93,77 @@ public class PaymentApiController {
         }
     }
 
-    public String cancel(String userId, String orderId) throws ExecutionException, InterruptedException, JsonProcessingException {
+    /**
+     * Method called when a user wants to cancel an order. We initialize a new transactionID and a Completable Future
+     * object. We send the event CancelPayment, so that other microservices are informed. The final result is returned
+     * once all microservices successfully complete the canceling process.
+     * @param userID the UUID of the user
+     * @param orderID the UUID of the order
+     * @return Success, if the order has been canceled. Otherwise, throws an exception which returns a 404 Response
+     * @throws ExecutionException
+     * @throws InterruptedException
+     * @throws JsonProcessingException
+     */
+    public String cancel(String userID, String orderID) throws ExecutionException, InterruptedException, JsonProcessingException {
         UUID transactionID = UUID.randomUUID();
         CompletableFuture<String> future = new CompletableFuture<>();
         Map<String, Object> eventData = new HashMap<>();
-        eventData.put("UserID", userId);
-        eventData.put("OrderID", orderId);
+        eventData.put("UserID", userID);
+        eventData.put("OrderID", orderID);
         eventData.put("TransactionID", transactionID);
         transactionMap.put(transactionID, future);
         PaymentService.sendEvent("CancelPayment", mapper.writeValueAsString(eventData));
         String result = future.get();
         transactionMap.remove(transactionID);
-        if (result != "Success") {
+        if (!Objects.equals(result, "Success")) {
             throw new PaymentError(result);
         }
         return result;
 
     }
 
-    public String pay(String userId, String orderId, int amount) {
-        User user = PaymentService.findUserById(UUID.fromString(userId));
+    /**
+     * Method called when the pay/{user_id}/{order_id}/{amount} endpoint is accessed. Normally, paying should happen
+     * when a user calls the /checkout/ endpoint in the order microservice. Therefore, we do not check if the
+     * order is real. We only check if the amount that needs to be paid is greater than the money that the user has.
+     * @param userID the UUID of the user
+     * @param orderID the UUID of the order
+     * @param amount the amount that needs to be paid
+     * @return Success or Fail depending on whether the payment went through or not
+     */
+    public String pay(String userID, String orderID, int amount) {
+        User user = PaymentService.findUserById(UUID.fromString(userID));
         if (user.credit < amount) {
             throw new PaymentError("Not Enough Credit");
         }
 
-        boolean status = PaymentService.addFunds(UUID.fromString(userId), -1 * amount);
+        boolean status = PaymentService.addFunds(UUID.fromString(userID), -1 * amount);
         if (status) {
-            PaymentService.sendEvent("PaymentSucceeded", orderId);
+            PaymentService.sendEvent("PaymentSucceeded", orderID);
             return "Payment went through.";
         }
 
         return "Payment failed";
     }
 
-    public Map<String, Object> status(String userId, String orderId) {
+    /**
+     * Method called when the status of an order is called. As the status of the order is available in the order microservice
+     * we send an HTTP request to fetch the order object.
+     * @param userID the UUID of the user
+     * @param orderID the UUID of the order
+     * @return JSON containing a boolean field paid, which represents the status of the order
+     */
+    public Map<String, Object> status(String userID, String orderID) {
         Map<String, Object> res = new HashMap<>(Map.of("status", true));
         try (CloseableHttpClient client = HttpClients.createDefault()) {
-            HttpGet request = new HttpGet(orderUrl + "/find/" + orderId);
+            HttpGet request = new HttpGet(orderUrl + "/find/" + orderID);
             String response = client.execute(request, httpResponse -> EntityUtils.toString(httpResponse.getEntity()));
 
             JsonNode responseJSON = mapper.readTree(response);
             String receivedUserId = responseJSON.get("user_id").asText();
             boolean paid = responseJSON.get("paid").asBoolean();
 
-            if (receivedUserId.equals(userId)) {
+            if (receivedUserId.equals(userID)) {
                 res.put("paid", paid);
                 return res;
             }
