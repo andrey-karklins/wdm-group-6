@@ -35,13 +35,12 @@ public class StockEventsService {
                 System.out.println("Connected to " + data);
                 connected = true;
                 break;
-            // Below events to be handled
-            // ... (TODO)
             case "ItemStock":
                 break;
             case "StockReturned":
             case "StockSubtracted":
                 try {
+                    //Parsing the JSON response from the data
                     JsonNode responseJSON = mapper.readTree(data);
                     UUID transactionID = UUID.fromString(responseJSON.get("TransactionID").asText());
                     UUID userID = UUID.fromString(responseJSON.get("UserID").asText());
@@ -52,7 +51,8 @@ public class StockEventsService {
                         UUID item = UUID.fromString(itemNode.asText());
                         items.add(item);
                     }
-                    int totalCost = (int) responseJSON.get("TotalCost").asDouble();
+                    int totalCost = responseJSON.get("TotalCost").asInt();
+                    //Based on the event, either call returnFunds or subtractFunds
                     if (event.equals("StockReturned")) {
                         PaymentApiController.returnFunds(userID, orderID, transactionID, totalCost, items);
                     } else {
