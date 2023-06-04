@@ -33,16 +33,16 @@ public class PaymentEventsService {
             // Below events to be handled
             // ... (TODO)
             case "FundsSubtractFailed":
-                HandlerFundsSubtractFailed(data);
+                handlerFundsSubtractFailed(data);
                 break;
             case "ReturnFundsFailed":
-                HandlerReturnFundsFailed(data);
+                handlerReturnFundsFailed(data);
                 break;
             default:
         }
     }
 
-    private static void HandlerFundsSubtractFailed(String data) {
+    private static void handlerFundsSubtractFailed(String data) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<Object, Object> data_map = new HashMap<>();
         try {
@@ -59,7 +59,7 @@ public class PaymentEventsService {
         ;
         for (String s : items) {
             items_uuid.add(UUID.fromString(s));
-            boolean result = stockservice.AddStock(UUID.fromString(s), 1);
+            boolean result = stockservice.addStock(UUID.fromString(s), 1);
         }
         //send failed event to OrderService
         Map<String, Object> failmap = new HashMap<>();
@@ -77,7 +77,7 @@ public class PaymentEventsService {
         StockService.sendEvent("StockSubtractFailed", data_json_fail);
     }
 
-    private static void HandlerReturnFundsFailed(String data) {
+    private static void handlerReturnFundsFailed(String data) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<Object, Object> data_map = new HashMap<>();
         try {

@@ -87,14 +87,14 @@ public class StockService {
         return item;
     }
 
-    public UUID CreateItem(int price) {
+    public UUID createItem(int price) {
         UUID id = UUID.randomUUID();
         Item item = new Item(id.toString(), 0, price);
         itemMapper.save(item);
         return id;
     }
 
-    public boolean AddStock(UUID itemID, int amount) {
+    public boolean addStock(UUID itemID, int amount) {
         boolean success = false;
         while (!success) {
             Item i = itemAccessor.getItemById(itemID);
@@ -130,7 +130,7 @@ public class StockService {
             }
         } catch (Exception e) {
             for (UUID k : executed.keySet()) {
-                AddStock(k, executed.get(k));
+                addStock(k, executed.get(k));
             }
             throw new StockError("Not enough stock");
         }
