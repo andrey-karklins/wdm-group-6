@@ -37,18 +37,12 @@ public class StockEventsService {
                 System.out.println("Connected to " + data);
                 connected = true;
                 break;
-            // Below events to be handled
-            // ... (TODO)
             case "ItemStock":
-//                System.out.println("ItemStock: " + data);
                 String orderId = data.split(" ")[0];
                 String itemId = data.split(" ")[1];
                 int price = Integer.parseInt(data.split(" ")[2]);
                 OrderService.priceMap.put(orderId + " " + itemId, price);
                 break;
-//            case "StockSubtractedFailed":
-//                System.out.println("StockSubtractedFailed: " + data);
-//                break;
             case "StockSubtractFailed":
                 ObjectMapper objectMapper = new ObjectMapper();
                 try {

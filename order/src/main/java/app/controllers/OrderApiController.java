@@ -32,8 +32,6 @@ public class OrderApiController {
                 items += " ";
             }
         }
-//        OrderService.sendEvent("OrderCanceled", orderId);
-//        OrderService.sendEvent("OrderFailed", items);
         UUID orderIdUUID = UUID.fromString(orderId);
         boolean result = OrderService.removeOrder(orderIdUUID);
         return result ? "Success" : "Failure";
@@ -72,14 +70,6 @@ public class OrderApiController {
         return result ? "Success" : "Failure";
     }
 
-//    public static void handleFailedTransaction(UUID orderId, String errorMsg) {
-//        // Update the order status to Failure
-//        orderStatusMap.put(orderId, "Failure");
-//        System.out.println("Transaction for order " + orderId + " failed: " + errorMsg);
-//    }
-
-    //TODO Call the payments microservice order to pay and the stock microservice to decrement the stock nr
-    //Check if it is unpaid
     public String checkout(String orderId) throws ExecutionException, InterruptedException {
         UUID orderIdUUID = UUID.fromString(orderId);
         Order resultOrder = OrderService.findOrderById(UUID.fromString(orderId));
@@ -99,7 +89,6 @@ public class OrderApiController {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //todo: edge case: it was already paid by other transaction
         String result = future.get();
         checkoutTransactionMap.remove(transactionId);
         if (result == "Success") {

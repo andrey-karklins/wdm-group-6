@@ -32,7 +32,6 @@ public class PaymentEventsService {
                 connected = true;
                 System.out.println("Connected to " + data);
                 break;
-            // Below events to be handled
             case "PaymentSucceeded":
                 OrderService.changePaidStatus(UUID.fromString(data));
                 break;

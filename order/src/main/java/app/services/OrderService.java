@@ -178,8 +178,6 @@ public class OrderService {
             try {
                 return JSONmapper.readTree(response);
             } catch (JsonParseException e) {
-                // Invalid JSON response
-                // System.err.println("Invalid JSON response: " + response);
                 return null;
             }
         } catch (IOException e) {
@@ -189,16 +187,7 @@ public class OrderService {
         return null;
     }
 
-    //TODO Retrieve the price from the stock microservice
     public boolean addItemToOrder(UUID orderId, UUID itemId) {
-//        JsonNode item = requestItem(itemId);
-//        if (item == null) {
-//            return false;
-//        }
-//        assert item != null;
-
-//        int itemPrice = (int) item.get("price").asInt();
-
         Order order = findOrderById(orderId);
         if (order == null) {
             return false;
@@ -207,15 +196,11 @@ public class OrderService {
             order.items = new ArrayList<>();
         }
         order.items.add(itemId);
-//        order.total_cost += itemPrice;
         orderMapper.save(order);
         return true;
     }
 
-    //TODO Retrieve the price from the stock microservice
     public boolean removeItemFromOrder(UUID orderId, UUID itemId) {
-//        int itemPrice = 1;//dummy
-//        int itemPrice = priceMap.get(orderId.toString() + " " + itemId.toString());
         Order order = findOrderById(orderId);
         if (order == null) {
             return false;
@@ -225,7 +210,6 @@ public class OrderService {
             return false;
         }
         order.items.remove(itemId);
-//        order.total_cost -= itemPrice;
         orderMapper.save(order);
         return true;
     }
