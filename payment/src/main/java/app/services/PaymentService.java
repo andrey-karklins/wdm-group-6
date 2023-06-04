@@ -73,17 +73,15 @@ public class PaymentService {
 
     // Function to add funds to user's account
     public static boolean addFunds(UUID user_id, int amount) {
-        boolean done = false;
         UserAccessor userAccessor = mapper.createAccessor(UserAccessor.class);
         User user = userAccessor.getUserById(user_id);
         if (user != null) {
             user.credit += amount;
             mapperUser.save(user);
-            done = true;
         } else {
             throw new PaymentError("User not found");
         }
-        return done;
+        return true;
     }
 
     // Function to create a new user with 0 credit

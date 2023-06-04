@@ -33,10 +33,6 @@ public class OrderEventsService {
                 System.out.println("Connected to " + data);
                 connected = true;
                 break;
-            // Below events to be handled
-            // ... (TODO)
-            case "ifItemExists":
-                break;
             case "OrderCancelledFailed":
                 try {
                     JsonNode responseJSON = mapper.readTree(data);

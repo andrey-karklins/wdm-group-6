@@ -90,8 +90,6 @@ public class PaymentApiController {
     }
 
     public String pay(String userId, String orderId, int amount) {
-
-
         User user = PaymentService.findUserById(UUID.fromString(userId));
         if (user.credit < amount) {
             throw new PaymentError("Not Enough Credit");
