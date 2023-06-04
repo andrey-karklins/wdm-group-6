@@ -20,10 +20,7 @@ public class StockApiController {
             Map<String, Object> errorMap = new HashMap<>();
             errorMap.put("error", e.getMessage());
             throw new StockError(e.getMessage());
-//            return errorMap;
         }
-
-//      return Map.of("stock", 10, "price", 100);
         return Map.of("item_id", item.item_id, "stock", item.stock, "price", item.price);
     }
 
@@ -37,10 +34,6 @@ public class StockApiController {
     public String add(String itemId, int amount) {
         UUID id = UUID.fromString(itemId);
         boolean res = stock_service.addStock(id, amount);
-//        Map<String, String> resultMap = Map.of(
-//                "item_id", row.getUUID("item_id").toString(),
-//                "stock", Integer.toString(row.getInt("stock")),
-//                "price", Integer.toString(row.getInt("price")));
         return res ? "Success" : "Failure";
     }
 
