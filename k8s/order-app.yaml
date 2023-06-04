@@ -27,13 +27,6 @@ spec:
     spec:
       containers:
         - name: order
-          image: order:latest
-          resources:
-            limits:
-              memory: "1Gi"
-              cpu: "1"
-            requests:
-              memory: "1Gi"
-              cpu: "1"
+          image: akarklins/order:latest
           ports:
             - containerPort: 5000

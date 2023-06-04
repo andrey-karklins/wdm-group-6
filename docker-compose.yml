@@ -9,7 +9,7 @@ services:
 
   order-service:
     build: ./order
-    image: order:latest
+    image: akarklins/order:latest
 
   order-db:
     image: cassandra:latest
@@ -18,7 +18,7 @@ services:
 
   stock-service:
     build: ./stock
-    image: stock:latest
+    image: akarklins/stock:latest
 
   stock-db:
     image: cassandra:latest
@@ -27,7 +27,7 @@ services:
 
   payment-service:
     build: ./payment
-    image: user:latest
+    image: akarklins/user:latest
 
   payment-db:
     image: cassandra:latest

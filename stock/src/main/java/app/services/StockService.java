@@ -62,8 +62,6 @@ public class StockService {
                 createKeyspace("stock_keyspace");
                 useKeyspace("stock_keyspace");
                 createTable("items");
-//                Item newItem = new Item("9552eace-06a7-4a5e-a90d-9200063ed94a", 10, 6);
-//                insertItem(newItem);
                 mapper = new MappingManager(session);
                 itemMapper = mapper.mapper(Item.class, "stock_keyspace");
                 itemAccessor = mapper.createAccessor(ItemAccessor.class);
@@ -71,7 +69,6 @@ public class StockService {
                 initialized = true;
             } catch (Exception e) {
                 System.out.println("Cassandra is not ready yet, retrying in 5 seconds...");
-                e.printStackTrace();
                 Thread.sleep(5000);
             }
         }
