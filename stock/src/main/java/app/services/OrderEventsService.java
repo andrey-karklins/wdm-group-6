@@ -36,16 +36,16 @@ public class OrderEventsService {
             // ... (TODO)
             case "OrderCheckout":
 //                System.out.println(data);
-                HandlerOrderCheckout(data);
+                handlerOrderCheckout(data);
                 break;
             case "OrderCancelled":
-                HandlerOrderCancelled(data);
+                handlerOrderCancelled(data);
                 break;
             default:
         }
     }
 
-    private static void HandlerOrderCheckout(String data) {
+    private static void handlerOrderCheckout(String data) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<Object, Object> data_map = new HashMap<>();
         try {
@@ -106,7 +106,7 @@ public class OrderEventsService {
         StockService.sendEvent("StockSubtracted", data_json);
     }
 
-    private static void HandlerOrderCancelled(String data) {
+    private static void handlerOrderCancelled(String data) {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<Object, Object> data_map = new HashMap<>();
         Map<String, Object> failmap = new HashMap<>();
@@ -144,7 +144,7 @@ public class OrderEventsService {
                 }
                 StockService.sendEvent("StockSubtractFailed", data_json_fail);
             }
-            boolean res = stockService.AddStock(UUID.fromString(s), 1);
+            boolean res = stockService.addStock(UUID.fromString(s), 1);
         }
         Map<String, Object> data_to_payment = new HashMap<>();
         data_to_payment.put("UserID", UUID.fromString(userID));

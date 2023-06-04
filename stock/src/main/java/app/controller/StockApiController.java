@@ -36,7 +36,7 @@ public class StockApiController {
 
     public String add(String itemId, int amount) {
         UUID id = UUID.fromString(itemId);
-        boolean res = stock_service.AddStock(id, amount);
+        boolean res = stock_service.addStock(id, amount);
 //        Map<String, String> resultMap = Map.of(
 //                "item_id", row.getUUID("item_id").toString(),
 //                "stock", Integer.toString(row.getInt("stock")),
@@ -45,7 +45,7 @@ public class StockApiController {
     }
 
     public Map<String, Object> createItem(int price) {
-        UUID itemID = stock_service.CreateItem(price);
+        UUID itemID = stock_service.createItem(price);
         Map<String, Object> res = Map.of("item_id", itemID, "price:", price, "stock:", 0);
         return res;
     }
