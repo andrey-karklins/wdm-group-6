@@ -8,7 +8,6 @@ services:
       - "8000:80"
 
   order-service:
-    build: ./order
     image: akarklins/order:latest
 
   order-db:
@@ -17,7 +16,6 @@ services:
       - CASSANDRA_CLUSTER_NAME=order-cluster
 
   stock-service:
-    build: ./stock
     image: akarklins/stock:latest
 
   stock-db:
@@ -26,7 +24,6 @@ services:
       - CASSANDRA_CLUSTER_NAME=stock-cluster
 
   payment-service:
-    build: ./payment
     image: akarklins/user:latest
 
   payment-db:
